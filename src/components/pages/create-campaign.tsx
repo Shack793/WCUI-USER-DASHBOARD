@@ -13,9 +13,28 @@ import { dashboardAPI } from "../../lib/api"
 
 // Helper function to get proper image URL
 const getImageUrl = (url: string | null) => {
-  if (!url) return '/placeholder.svg?height=400&width=600';
-  if (url.startsWith('http')) return url;
-  return `http://127.0.0.1:8000${url}`;
+  console.log('=== getImageUrl called (create-campaign) ===')
+  console.log('Input URL:', url)
+
+  if (!url) {
+    console.log('No URL provided, returning placeholder')
+    return '/placeholder.svg?height=400&width=600'
+  }
+
+  if (url.startsWith('http')) {
+    // Fix localhost URLs to use 127.0.0.1:8000
+    if (url.includes('localhost/storage/')) {
+      const fixedUrl = url.replace('http://localhost/', 'http://127.0.0.1:8000/')
+      console.log('Fixed localhost URL:', url, '→', fixedUrl)
+      return fixedUrl
+    }
+    console.log('URL is absolute, returning as-is:', url)
+    return url
+  }
+
+  const fullUrl = `http://127.0.0.1:8000${url}`
+  console.log('URL is relative, returning full URL:', fullUrl)
+  return fullUrl
 };
 
 interface CreateCampaignData {

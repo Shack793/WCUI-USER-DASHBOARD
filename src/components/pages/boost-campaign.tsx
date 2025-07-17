@@ -121,6 +121,12 @@ export function BoostCampaignPage() {
     }
 
     if (url.startsWith("http")) {
+      // Fix localhost URLs to use 127.0.0.1:8000
+      if (url.includes('localhost/storage/')) {
+        const fixedUrl = url.replace('http://localhost/', 'http://127.0.0.1:8000/')
+        console.log('Fixed localhost URL:', url, '→', fixedUrl)
+        return fixedUrl
+      }
       console.log('URL is absolute, returning as-is:', url)
       return url
     }
