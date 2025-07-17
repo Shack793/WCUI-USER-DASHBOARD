@@ -60,6 +60,15 @@ export const dashboardAPI = {
     } : {}
     return api.post("/api/v1/campaigns", data, config)
   },
+  updateCampaign: (slug: string, data: FormData | any) => {
+    // Handle FormData for file uploads
+    const config = data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : {}
+    return api.post(`/api/v1/campaigns/${slug}`, data, config)
+  },
   updateCampaign: (id: string, data: any) => api.put(`/campaigns/${id}`, data),
   deleteCampaign: (id: string) => api.delete(`/campaigns/${id}`),
   boostCampaign: (campaignId: number, data: { plan_id: number; payment_method_id: number }) =>

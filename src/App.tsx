@@ -7,6 +7,7 @@ import { DashboardLayout } from "./components/dashboard-layout"
 import { DashboardContent } from "./components/dashboard-content"
 import { CampaignsPage } from "./components/pages/campaigns"
 import { CreateCampaignPage } from "./components/pages/create-campaign"
+import { UpdateCampaignPage } from "./components/pages/update-campaign"
 import { BoostCampaignPage } from "./components/pages/boost-campaign"
 import { ContributionsPage } from "./components/pages/contributions"
 import { WithdrawalsPage } from "./components/pages/withdrawals"
@@ -28,6 +29,7 @@ function App() {
           <Route path="/dashboard" element={<DashboardLayout><DashboardContent /></DashboardLayout>} />
           <Route path="/campaigns" element={<DashboardLayout><CampaignsPage /></DashboardLayout>} />
           <Route path="/campaigns/create" element={<DashboardLayout><CreateCampaignPage /></DashboardLayout>} />
+          <Route path="/campaigns/:slug/update" element={<DashboardLayout><UpdateCampaignPage /></DashboardLayout>} />
           <Route path="/campaigns/:id/boost" element={<DashboardLayout><BoostCampaignPage /></DashboardLayout>} />
           <Route path="/contributions" element={<DashboardLayout><ContributionsPage /></DashboardLayout>} />
           <Route path="/withdrawals" element={<DashboardLayout><WithdrawalsPage /></DashboardLayout>} />

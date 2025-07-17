@@ -53,21 +53,21 @@ const navigationItems = [
     url: "/campaigns",
     icon: Target,
   },
-  {
-    title: "My Contributions",
-    url: "/contributions",
-    icon: Heart,
-  },
+ // {
+ //   title: "My Contributions",
+   // url: "/contributions",
+    //icon: Heart,
+ // },
   {
     title: "Withdrawals",
     url: "/withdrawals",
     icon: Wallet,
   },
-  {
-    title: "Comments",
-    url: "/comments",
-    icon: MessageSquare,
-  },
+  //{
+   // title: "Comments",
+   // url: "/comments",
+   // icon: MessageSquare,
+  //},
   {
     title: "Notifications",
     url: "/notifications",

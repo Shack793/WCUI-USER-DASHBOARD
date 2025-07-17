@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Plus, Calendar, DollarSign, Zap } from "lucide-react"
+import { Plus, Calendar, DollarSign, Zap, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -259,7 +259,15 @@ export function CampaignsPage() {
                     <div className="text-sm text-muted-foreground">
                       Goal: {formatCurrency(goalAmount)}
                     </div>
-                    <div className="pt-4">
+                    <div className="pt-4 space-y-2">
+                      <Button
+                        onClick={() => navigate(`/campaigns/${campaign.slug}/update`)}
+                        className="w-full bg-[#37b7ff] hover:bg-[#2a8fc7] text-white font-semibold shadow-lg transform transition-all hover:scale-[1.02]"
+                        size="sm"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit Campaign
+                      </Button>
                       <Button
                         onClick={() => navigate(`/campaigns/${campaign.id}/boost`)}
                         className={`w-full font-semibold shadow-lg transform transition-all hover:scale-[1.02] ${
