@@ -592,13 +592,23 @@ export function BoostCampaignPage() {
 
         toast({
           title: "✅ Payment Initiated Successfully!",
-          description: `Transaction ID: ${transactionId}. Check your phone to approve.`,
+          description: `Transaction ID: ${transactionId}. Please check your phone and enter your PIN.`,
           variant: "default",
         })
 
         console.log('✅ SUCCESS: Payment initiated successfully')
         console.log('Transaction ID:', transactionId)
         console.log('Transaction Status:', responseData.data?.transactionStatus)
+        
+        // Give user 30 seconds to enter PIN before starting status checks
+        console.log('Waiting 30 seconds for PIN entry...')
+        toast({
+          title: "Waiting for PIN Entry",
+          description: "Please check your phone and enter your PIN. Status check will begin in 30 seconds.",
+          variant: "default",
+        })
+        
+        await new Promise(resolve => setTimeout(resolve, 30000)) // 30 second delay
         console.log('Message:', responseData.message)
 
         // Show the transaction details
@@ -619,23 +629,41 @@ export function BoostCampaignPage() {
         // API returned an error code
         const errorMessage = responseData.error || responseData.message || 'Unknown error'
 
-        // Set error state to show below button
-        setError(`Error Code ${responseData.errorCode}: ${errorMessage}`)
-
-        // Try multiple ways to show the toast
-        try {
+        // Check if this is error code 100 first
+        if (responseData.errorCode === "100" || responseData.errorCode === 100 || 
+            responseData.data?.transactionStatus === "FAILED") {
+          console.log('=== ERROR CODE 100 OR FAILED STATUS DETECTED IN INITIAL RESPONSE ===')
+          console.log('User cancelled or payment failed - stopping all further processing')
+          
+          const errorMessage = 'Payment failed: Transaction was cancelled or failed'
+          setError(errorMessage)
+          
+          // Show error toast and alert for better visibility
           toast({
             title: "❌ Payment Failed",
-            description: `Error Code ${responseData.errorCode}: ${errorMessage}`,
+            description: errorMessage,
             variant: "destructive",
           })
-          console.log('✅ Toast called successfully')
-        } catch (toastError) {
-          console.error('❌ Toast failed:', toastError)
+          
+          // Also show alert as backup
+          alert('❌ Payment Failed!\n' + errorMessage)
+          
+          console.log('Error message set and notifications shown')
+          console.log('Exiting early - no guest boost will be attempted')
+          
+          // Exit early - do not attempt guest boost
+          return
         }
 
-        // Also try alert as backup
-        alert(`Payment Failed!\nError Code ${responseData.errorCode}: ${errorMessage}`)
+        // For other error codes
+        setError(`Error Code ${responseData.errorCode}: ${errorMessage}`)
+
+        toast({
+          title: "❌ Payment Failed",
+          description: `Error Code ${responseData.errorCode}: ${errorMessage}`,
+          variant: "destructive",
+        })
+        console.log('✅ Toast called successfully')
 
         console.log('❌ ERROR: API returned error code')
         console.log('Error Code:', responseData.errorCode)
@@ -790,14 +818,15 @@ export function BoostCampaignPage() {
         }
 
         // Check if payment failed with error code 100
-        if (statusData.errorCode === "100" || statusData.errorCode === 100) {
-          console.log('❌ PAYMENT FAILED - ERROR CODE 100 DETECTED')
-          console.log('User cancelled or insufficient balance - NO GUEST BOOST')
+        if (statusData.errorCode === "100" || statusData.errorCode === 100 || 
+            statusData.data?.transactionStatus === "FAILED") {
+          console.log('❌ PAYMENT FAILED - ERROR CODE 100 OR FAILED STATUS DETECTED')
+          console.log('Transaction failed or was cancelled - NO GUEST BOOST')
 
-          setError('Payment failed: User cancelled or insufficient balance')
+          setError('Payment failed: Transaction was cancelled or failed')
           toast({
             title: "❌ Payment Failed",
-            description: "Payment was cancelled or insufficient balance. Please try again.",
+            description: "Transaction was cancelled or failed. Please try again.",
             variant: "destructive",
           })
           return // Exit the polling loop - no guest boost
@@ -1456,7 +1485,7 @@ export function BoostCampaignPage() {
                 )}
 
                 {/* Debug Button */}
-                <div className="flex gap-2 pt-2">
+                {/*<div className="flex gap-2 pt-2">
                   <Button
                     type="button"
                     variant="outline"
@@ -1466,7 +1495,7 @@ export function BoostCampaignPage() {
                   >
                     Test API Connectivity
                   </Button>
-                </div>
+                </div>*/}
 
                 {/* Submit Button */}
                 <div className="flex gap-4 pt-4">
@@ -1496,17 +1525,8 @@ export function BoostCampaignPage() {
 
               {/* Direct API Test Button */}
               <div className="mt-4 p-4 border-t">
-                <Button
-                  type="button"
-                  onClick={testAPIEndpointsDirectly}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-                  disabled={loading}
-                >
-                  🔧 Test API Endpoints Directly (Check Console)
-                </Button>
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  This will test the payment endpoints directly with fetch() to verify they work
-                </p>
+                
+                
               </div>
             </CardContent>
           </Card>
