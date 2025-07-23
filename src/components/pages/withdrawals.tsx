@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { DialogProvider } from "@/components/ui/dialog-context"
+import { WithdrawalForm } from "./withdrawal-form/withdrawal-form"
 
 const withdrawals = [
   {
@@ -91,10 +94,25 @@ export function WithdrawalsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Withdrawals</h2>
           <p className="text-muted-foreground">Manage your campaign fund withdrawals</p>
         </div>
-        <Button>
-          <Wallet className="mr-2 h-4 w-4" />
-          Request Withdrawal
-        </Button>
+        <DialogProvider>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Wallet className="mr-2 h-4 w-4" />
+                Request Withdrawal
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Request Withdrawal</DialogTitle>
+                <DialogDescription>
+                  Enter your mobile money details to withdraw funds from your campaign.
+                </DialogDescription>
+              </DialogHeader>
+              <WithdrawalForm />
+            </DialogContent>
+          </Dialog>
+        </DialogProvider>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

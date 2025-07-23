@@ -1,44 +1,7 @@
-import axios from "axios"
 import axiosInstance from './axios';
 
-// Create axios instance with base configuration
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8000",
-  timeout: 120000, // 2 minutes timeout for payment operations
-  headers: {
-    "Content-Type": "application/json",
-  },
-})
-
-// Request interceptor to add auth token
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("authToken")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-    return config
-  },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
-
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem("authToken")
-      window.location.href = "/login"
-    }
-    return Promise.reject(error)
-  },
-)
-
 // Use the shared axiosInstance from lib/axios.ts
-const apiInstance = axiosInstance;
+const api = axiosInstance;
 
 // API endpoints
 export const dashboardAPI = {
@@ -82,8 +45,59 @@ export const dashboardAPI = {
   createContribution: (data: any) => api.post("/contributions", data),
 
   // Withdrawals
-  getWithdrawals: () => api.get("/withdrawals"),
-  requestWithdrawal: (data: any) => api.post("/withdrawals", data),
+  getWithdrawals: () => api.get("/api/v1/withdrawals"),
+  requestWithdrawal: async (data: {
+    customer: string;
+    msisdn: string;
+    amount: string;
+    network: string;
+    narration?: string;
+  }) => {
+    try {
+      // First check balance
+      const balanceResponse = await api.get("/api/v1/wallet/balance");
+      const currentBalance = parseFloat(balanceResponse.data.data.balance);
+      const withdrawalAmount = parseFloat(data.amount);
+
+      if (withdrawalAmount > currentBalance) {
+        throw new Error("Insufficient balance");
+      }
+
+      // Generate a transaction ID (you might want to adjust this format)
+      const transactionId = `WD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+
+      // First, request the credit to wallet
+      const creditPayload = {
+        customer: data.customer.trim(),
+        msisdn: data.msisdn.trim(),
+        amount: data.amount.toString(),
+        network: data.network.toUpperCase(),
+        narration: data.narration || 'Credit MTN Customer',
+        transaction_id: transactionId
+      };
+      console.log('📦 Credit wallet payload:', creditPayload);
+      
+      const creditResponse = await api.post("/api/v1/payments/credit-wallet", creditPayload);
+      
+      if (!creditResponse.data.success) {
+        throw new Error(creditResponse.data.message || "Failed to process credit");
+      }
+
+      // Only if credit was successful, update the wallet
+      const updatePayload = {
+        transaction_id: transactionId,
+        amount: data.amount.toString(),
+        status: 'success'
+      };
+      console.log('📦 Wallet update payload:', updatePayload);
+      
+      return api.post("/api/v1/wallet/update-after-withdrawal", updatePayload);
+    } catch (error) {
+      console.error('Failed to process withdrawal:', error);
+      throw error;
+    }
+  },
+  getWalletBalance: () => api.get("/api/v1/wallet/balance"),
 
   // Notifications
   getNotifications: () => api.get("/notifications"),
@@ -102,27 +116,27 @@ export const dashboardAPI = {
 
 // Campaign API endpoints
 export const campaignApi = {
-  getAll: () => apiInstance.get('/campaigns'),
-  getAllCampaigns: () => apiInstance.get('/campaigns/all'),
-  getRunning: () => apiInstance.get('/campaigns'),
-  getTrending: () => apiInstance.get('/campaigns/trending'),
-  getByCategory: (categoryId: number) => apiInstance.get(`/categories/${categoryId}/campaigns`),
-  getById: (id: number) => apiInstance.get(`/campaigns/${id}`),
-  create: (data: any) => apiInstance.post('/campaigns', data),
-  donate: (campaignId: number, data: any) => apiInstance.post(`/campaigns/${campaignId}/donations`, data),
+  getAll: () => api.get('/campaigns'),
+  getAllCampaigns: () => api.get('/campaigns/all'),
+  getRunning: () => api.get('/campaigns'),
+  getTrending: () => api.get('/campaigns/trending'),
+  getByCategory: (categoryId: number) => api.get(`/categories/${categoryId}/campaigns`),
+  getById: (id: number) => api.get(`/campaigns/${id}`),
+  create: (data: any) => api.post('/campaigns', data),
+  donate: (campaignId: number, data: any) => api.post(`/campaigns/${campaignId}/donations`, data),
 };
 
 // Category API endpoints
 export const categoryApi = {
-  getAll: () => apiInstance.get('/categories'),
+  getAll: () => api.get('/categories'),
 };
 
 // Auth API endpoints
 export const authApi = {
-  login: (credentials: any) => apiInstance.post('/login', credentials),
-  register: (userData: any) => apiInstance.post('/register', userData),
-  logout: () => apiInstance.post('/logout'),
-  getUser: () => apiInstance.get('/user'),
+  login: (credentials: any) => api.post('/api/v1/login', credentials),
+  register: (userData: any) => api.post('/api/v1/register', userData),
+  logout: () => api.post('/api/v1/logout'),
+  getUser: () => api.get('/api/v1/user'),
 };
 
 export default api
