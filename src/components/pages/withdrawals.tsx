@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { Wallet, DollarSign, Clock, CheckCircle, XCircle } from "lucide-react"
+import api from "@/lib/api"
+import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -11,13 +13,12 @@ import { DialogProvider } from "@/components/ui/dialog-context"
 import { WithdrawalForm } from "./withdrawal-form/withdrawal-form"
 
 type Withdrawal = {
-  id: number
+  transaction_id: string
   amount: number
   date: string
   status: string
   method: string
-  campaignTitle: string
-  campaignId: number
+  currency: string
 }
 
 type Campaign = {
@@ -75,6 +76,7 @@ const getStatusVariant = (status: string) => {
 }
 
 export function WithdrawalsPage() {
+  const { toast } = useToast()
   const [withdrawalList, setWithdrawalList] = useState<Withdrawal[]>([])
   const [loading, setLoading] = useState(false)
   const [walletStats, setWalletStats] = useState<WalletStats>({
@@ -92,29 +94,49 @@ export function WithdrawalsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
 
   useEffect(() => {
-    const fetchWalletStats = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
-        const response = await fetch('http://127.0.0.1:8000/api/v1/wallet-stats')
-        const data = await response.json()
-        if (data.success) {
-          setWalletStats(data.data)
+        // Fetch wallet stats
+        const { data: walletData } = await api.get('/api/v1/wallet-stats')
+        if (walletData.success) {
+          console.log('Wallet stats loaded:', walletData.data)
+          setWalletStats(walletData.data)
+        } else {
+          console.error("Failed to load wallet stats:", walletData.message)
+          toast({
+            title: "Error",
+            description: "Failed to load wallet statistics",
+            variant: "destructive",
+          })
         }
 
-        // Fetch campaigns
-        const campaignsResponse = await fetch('http://127.0.0.1:8000/api/v1/campaigns/public')
-        const campaignsData = await campaignsResponse.json()
-        if (campaignsData.data) {
-          setCampaigns(campaignsData.data)
+        // Fetch withdrawal history
+        const { data: historyData } = await api.get('/api/v1/wallet/withdrawal-history')
+        if (historyData.success) {
+          console.log('Withdrawal history loaded:', historyData.data)
+          setWithdrawalList(historyData.data.withdrawals)
+        } else {
+          console.error("Failed to load withdrawal history:", historyData.message)
+          toast({
+            title: "Error",
+            description: "Failed to load withdrawal history",
+            variant: "destructive",
+          })
         }
-      } catch (error) {
-        console.error("Failed to fetch wallet stats:", error)
+      } catch (error: any) {
+        console.error("Failed to fetch data:", error)
+        toast({
+          title: "Error",
+          description: error.response?.data?.message || "Failed to load data",
+          variant: "destructive",
+        })
       } finally {
         setLoading(false)
       }
     }
 
-    fetchWalletStats()
+    fetchData()
   }, [])
 
   return (
@@ -145,7 +167,7 @@ export function WithdrawalsPage() {
         </DialogProvider>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Withdrawn</CardTitle>
@@ -164,6 +186,23 @@ export function WithdrawalsPage() {
           <CardContent>
             <div className="text-2xl font-bold">{walletStats.currency} {Number(walletStats.available_balance).toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Ready to withdraw</p>
+          </CardContent>
+        </Card>
+        <Card>
+          
+          <CardContent>
+            <div className="text-2xl font-bold">{walletStats.total_withdrawals}</div>
+            <p className="text-xs text-muted-foreground">Number of transactions</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Account Status</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold capitalize">{walletStats.status}</div>
+            <p className="text-xs text-muted-foreground">Last updated: {new Date(walletStats.updated_at).toLocaleDateString()}</p>
           </CardContent>
         </Card>
       </div>
@@ -185,34 +224,31 @@ export function WithdrawalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {walletStats.last_withdrawal?.details ? (
-                <TableRow>
-                  <TableCell className="font-medium">
-                    {campaigns.find((c: Campaign) => 
-                      c.id === Number(walletStats.last_withdrawal.details?.campaign_id)
-                    )?.title || 'Unknown Campaign'}
-                  </TableCell>
-                  <TableCell>
-                    {walletStats.currency} {Number(walletStats.last_withdrawal.details.amount).toLocaleString()}
-                  </TableCell>
-                  <TableCell>
-                    {walletStats.last_withdrawal.details.payment_method}
-                  </TableCell>
-                  <TableCell>
-                    {walletStats.last_withdrawal.date ? 
-                      new Date(walletStats.last_withdrawal.date).toLocaleDateString() : 
-                      'N/A'
-                    }
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(walletStats.last_withdrawal.details.status)}
-                      <Badge variant={getStatusVariant(walletStats.last_withdrawal.details.status) as any}>
-                        {walletStats.last_withdrawal.details.status}
-                      </Badge>
-                    </div>
-                  </TableCell>
-                </TableRow>
+              {withdrawalList.length > 0 ? (
+                withdrawalList.map((withdrawal) => (
+                  <TableRow key={withdrawal.transaction_id}>
+                    <TableCell className="font-medium">
+                      {withdrawal.transaction_id}
+                    </TableCell>
+                    <TableCell>
+                      {withdrawal.currency} {Number(withdrawal.amount).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      {withdrawal.method}
+                    </TableCell>
+                    <TableCell>
+                      {new Date(withdrawal.date).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(withdrawal.status)}
+                        <Badge variant={getStatusVariant(withdrawal.status) as any}>
+                          {withdrawal.status}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground">

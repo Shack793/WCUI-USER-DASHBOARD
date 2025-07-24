@@ -23,7 +23,7 @@ export const dashboardAPI = {
     } : {}
     return api.post("/api/v1/campaigns", data, config)
   },
-  updateCampaign: (slug: string, data: FormData | any) => {
+  updateCampaignWithForm: (slug: string, data: FormData | any) => {
     // Handle FormData for file uploads
     const config = data instanceof FormData ? {
       headers: {
