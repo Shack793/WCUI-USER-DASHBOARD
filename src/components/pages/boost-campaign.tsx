@@ -1398,7 +1398,7 @@ export function BoostCampaignPage() {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="customer">Customer Name *</Label>
+                        <Label htmlFor="customer">Name *</Label>
                         <Input
                           id="customer"
                           type="text"

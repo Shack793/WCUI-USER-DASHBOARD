@@ -10,7 +10,6 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletBalance, useNetworkDetection } from './hooks';
 import { useDialog } from '@/components/ui/dialog-context';
-import { DialogClose } from '@/components/ui/dialog';
 
 const formSchema = z.object({
   customer: z
@@ -42,6 +41,12 @@ export function WithdrawalForm() {
   const { setIsOpen } = useDialog();
   const { balance, currency, loading: balanceLoading, refetchBalance } = useWalletBalance();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
+  const [successDetails, setSuccessDetails] = useState<{
+    amount: string;
+    newBalance: string;
+    transactionId?: string;
+  } | null>(null);
 
   const {
     register,
@@ -109,16 +114,32 @@ export function WithdrawalForm() {
 
         console.log('✅ Withdrawal successful:', response.data);
         
-        toast({
-          title: 'Withdrawal Successful',
-          description: `Your withdrawal of ${data.amount} has been processed successfully. New balance: ${response.data.data.new_balance}`,
+        // Set success state with details
+        setWithdrawalSuccess(true);
+        setSuccessDetails({
+          amount: data.amount,
+          newBalance: response.data.data.new_balance || balance,
+          transactionId: response.data.data.transaction_id
         });
+        
+        // Show success toast
+        toast({
+          title: '✅ Withdrawal Successful!',
+          description: `GHS ${data.amount} has been successfully withdrawn to ${data.msisdn}. Your new balance is GHS ${response.data.data.new_balance || balance}.`,
+          duration: 6000,
+        });
+        
+        // Reset form and update balance
         reset();
         refetchBalance();
-        setIsOpen(false);
         
-        // Navigate to withdrawals dashboard
-        navigate('/withdrawals');
+        // Close dialog after a short delay to show success message
+        setTimeout(() => {
+          setIsOpen(false);
+          // Navigate to withdrawals dashboard to see updated data
+          navigate('/withdrawals');
+        }, 2000);
+        
       } catch (error: any) {
         console.error('❌ Withdrawal failed:', error);
         toast({
@@ -140,7 +161,53 @@ export function WithdrawalForm() {
 
   return (
     <div className="p-6 max-w-md mx-auto">
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      {withdrawalSuccess && successDetails ? (
+        // Success State
+        <div className="space-y-4 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+            <svg
+              className="h-8 w-8 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Withdrawal Successful!</h3>
+            <p className="text-gray-600 mt-2">
+              Your withdrawal has been processed successfully
+            </p>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">Amount Withdrawn:</span>
+              <span className="text-green-700 font-semibold">{currency} {successDetails.amount}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="font-medium">New Balance:</span>
+              <span className="text-green-700 font-semibold">{currency} {successDetails.newBalance}</span>
+            </div>
+            {successDetails.transactionId && (
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Transaction ID:</span>
+                <span className="text-gray-600 font-mono text-xs">{successDetails.transactionId}</span>
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-gray-500">
+            Redirecting to withdrawals page...
+          </p>
+        </div>
+      ) : (
+        // Form State
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="balance">Available Balance</Label>
           <div className="text-2xl font-bold">
@@ -153,7 +220,7 @@ export function WithdrawalForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="customer">Customer Name</Label>
+          <Label htmlFor="customer">Name</Label>
           <Input
             id="customer"
             type="text"
@@ -201,7 +268,8 @@ export function WithdrawalForm() {
         >
           {isSubmitting ? 'Processing...' : 'Withdraw Funds'}
         </Button>
-      </form>
+        </form>
+      )}
     </div>
   );
 }

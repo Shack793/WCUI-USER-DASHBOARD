@@ -10,46 +10,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Bar, BarChart, XAxis, YAxis } from "recharts"
 
-interface DashboardStats {
-  activeCampaigns: number
-  totalDonations: number
-  withdrawals: number
-}
-
-interface CampaignStat {
-  title: string
-  value: number
-  color: string
-}
-
 interface ChartDataPoint {
   month: string
-  donations: number
-  withdrawals: number
+  donations: string | number
+  withdrawals: string | number
 }
 
-interface RecentDonation {
+interface RecentContribution {
   id: number
-  donorName: string
-  campaignTitle: string
+  contributor: string
+  campaign: string
   amount: string
   date: string
-  status: string
-  avatar?: string
 }
 
-interface WithdrawalStat {
-  title: string
-  value: number | string
-  color: string
-}
-
-interface DashboardData {
-  stats: DashboardStats
-  campaignStats: CampaignStat[]
+interface DashboardApiResponse {
+  totalCampaigns: number
+  totalContributions: string
+  withdrawals: number
+  expiredCampaigns: number
   chartData: ChartDataPoint[]
-  recentDonations: RecentDonation[]
-  withdrawalStats: WithdrawalStat[]
+  recentContributions: RecentContribution[]
 }
 
 // Chart configuration
@@ -68,23 +49,10 @@ const chartConfig = {
 // Constants for the dashboard display
 
 export function DashboardContent() {
-  const { user, isAuthenticated } = useAuth()
+  const { isAuthenticated } = useAuth()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
-  const [dashboardData, setDashboardData] = useState<DashboardData>({
-    stats: {
-      activeCampaigns: 0,
-      totalDonations: 0,
-      withdrawals: 0
-    },
-    campaignStats: [],
-    chartData: [],
-    recentDonations: [],
-    withdrawalStats: [
-      { title: "Pending Withdrawals", value: 0, color: "bg-orange-500" },
-      { title: "Cancelled Withdrawals", value: 0, color: "bg-red-500" }
-    ]
-  })
+  const [dashboardData, setDashboardData] = useState<DashboardApiResponse | null>(null)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -96,14 +64,14 @@ export function DashboardContent() {
       try {
         setLoading(true)
         const { data } = await api.get('/api/v1/userdashboard')
-        if (data.success) {
-          console.log('Dashboard data loaded:', data.data)
-          setDashboardData(data.data)
+        if (data) {
+          console.log('Dashboard data loaded:', data)
+          setDashboardData(data)
         } else {
-          console.error("Failed to load dashboard data:", data.message)
+          console.error("Failed to load dashboard data")
           toast({
             title: "Error",
-            description: data.message || "Failed to load dashboard data",
+            description: "Failed to load dashboard data",
             variant: "destructive",
           })
         }
@@ -120,7 +88,7 @@ export function DashboardContent() {
     }
 
     fetchDashboardData()
-  }, [isAuthenticated]) // Add isAuthenticated to dependencies
+  }, [isAuthenticated, toast])
 
   return (
     <div className="space-y-6">
@@ -132,25 +100,25 @@ export function DashboardContent() {
       </div>
 
       {/* Main Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Campaigns</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Campaigns</CardTitle>
             <Target className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{dashboardData.stats.activeCampaigns}</div>
-            <p className="text-xs text-muted-foreground">Active campaign count</p>
+            <div className="text-2xl font-bold">{dashboardData?.totalCampaigns || 0}</div>
+            <p className="text-xs text-muted-foreground">Total campaign count</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Donations</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Contributions</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {dashboardData.stats.totalDonations.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">Total donations received</p>
+            <div className="text-2xl font-bold">GHS {dashboardData ? Number(dashboardData.totalContributions).toLocaleString() : '0'}</div>
+            <p className="text-xs text-muted-foreground">Total contributions received</p>
           </CardContent>
         </Card>
         <Card>
@@ -159,40 +127,20 @@ export function DashboardContent() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {dashboardData.stats.withdrawals}</div>
+            <div className="text-2xl font-bold">GHS {dashboardData?.withdrawals || 0}</div>
             <p className="text-xs text-muted-foreground">Total withdrawals made</p>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Campaign Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        {dashboardData.campaignStats.map((stat, index) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <div className={`h-4 w-4 rounded ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* Withdrawal Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
-        {dashboardData.withdrawalStats.map((stat: WithdrawalStat, index: number) => (
-          <Card key={index}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{stat.title}</CardTitle>
-              <div className={`h-4 w-4 rounded ${stat.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expired Campaigns</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.expiredCampaigns || 0}</div>
+            <p className="text-xs text-muted-foreground">Campaigns that have ended</p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -204,53 +152,72 @@ export function DashboardContent() {
           </CardHeader>
           <CardContent className="pl-2">
             <ChartContainer config={chartConfig}>
-              <BarChart accessibilityLayer data={dashboardData.chartData}>
+              <BarChart accessibilityLayer data={dashboardData?.chartData || []}>
                 <XAxis
                   dataKey="month"
                   tickLine={false}
                   tickMargin={10}
                   axisLine={false}
-                  tickFormatter={(value) => value.slice(0, 3)}
+                  tickFormatter={(value) => {
+                    // Format "2025-07" to "Jul"
+                    const date = new Date(value + '-01')
+                    return date.toLocaleDateString('en-US', { month: 'short' })
+                  }}
                 />
-                <YAxis tickLine={false} axisLine={false} tickFormatter={(value) => `GHS ${value}`} />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
-                <Bar dataKey="donations" fill="var(--color-donations)" radius={4} />
-                <Bar dataKey="withdrawals" fill="var(--color-withdrawals)" radius={4} />
+                <YAxis 
+                  tickLine={false} 
+                  axisLine={false} 
+                  tickFormatter={(value) => `GHS ${Number(value).toLocaleString()}`} 
+                />
+                <ChartTooltip 
+                  cursor={false} 
+                  content={<ChartTooltipContent indicator="dashed" />} 
+                />
+                <Bar 
+                  dataKey="donations" 
+                  fill="var(--color-donations)" 
+                  radius={4}
+                />
+                <Bar 
+                  dataKey="withdrawals" 
+                  fill="var(--color-withdrawals)" 
+                  radius={4}
+                />
               </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
-        {/* Recent Donations */}
+        {/* Recent Contributions */}
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Recent Donations</CardTitle>
-            <CardDescription>Latest donations received</CardDescription>
+            <CardTitle>Recent Contributions</CardTitle>
+            <CardDescription>Latest contributions received</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              {dashboardData.recentDonations.length > 0 ? (
-                dashboardData.recentDonations.map((donation) => (
-                <div key={donation.id} className="flex items-center">
+              {dashboardData?.recentContributions && dashboardData.recentContributions.length > 0 ? (
+                dashboardData.recentContributions.map((contribution: RecentContribution) => (
+                <div key={contribution.id} className="flex items-center">
                   <Avatar className="h-9 w-9">
-                    <AvatarImage src={donation.avatar || "/placeholder.svg"} alt={donation.donorName} />
+                    <AvatarImage src="/placeholder.svg" alt={contribution.contributor} />
                     <AvatarFallback>
-                      {donation.donorName
+                      {contribution.contributor
                         .split(" ")
-                        .map((n) => n[0])
+                        .map((n: string) => n[0])
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
                   <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{donation.donorName}</p>
-                    <p className="text-sm text-muted-foreground">{donation.campaignTitle}</p>
+                    <p className="text-sm font-medium leading-none">{contribution.contributor}</p>
+                    <p className="text-sm text-muted-foreground">{contribution.campaign}</p>
                   </div>
-                  <div className="ml-auto font-medium">{donation.amount}</div>
+                  <div className="ml-auto font-medium">GHS {Number(contribution.amount).toLocaleString()}</div>
                 </div>
               ))
               ) : (
                 <div className="text-center text-muted-foreground">
-                  No recent donations
+                  {loading ? "Loading contributions..." : "No recent contributions"}
                 </div>
               )}
             </div>

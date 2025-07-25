@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Wallet, DollarSign, Clock, CheckCircle, XCircle } from "lucide-react"
+import { Wallet, DollarSign, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import api from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,14 +19,6 @@ type Withdrawal = {
   status: string
   method: string
   currency: string
-}
-
-type Campaign = {
-  id: number
-  user_id: number
-  title: string
-  current_amount: string
-  status: string
 }
 
 type WithdrawalDetails = {
@@ -79,6 +71,7 @@ export function WithdrawalsPage() {
   const { toast } = useToast()
   const [withdrawalList, setWithdrawalList] = useState<Withdrawal[]>([])
   const [loading, setLoading] = useState(false)
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
   const [walletStats, setWalletStats] = useState<WalletStats>({
     available_balance: "0.00",
     total_withdrawn: "0.00",
@@ -91,51 +84,63 @@ export function WithdrawalsPage() {
     status: "active",
     updated_at: ""
   })
-  const [campaigns, setCampaigns] = useState<Campaign[]>([])
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true)
-        // Fetch wallet stats
-        const { data: walletData } = await api.get('/api/v1/wallet-stats')
-        if (walletData.success) {
-          console.log('Wallet stats loaded:', walletData.data)
-          setWalletStats(walletData.data)
-        } else {
-          console.error("Failed to load wallet stats:", walletData.message)
-          toast({
-            title: "Error",
-            description: "Failed to load wallet statistics",
-            variant: "destructive",
-          })
-        }
-
-        // Fetch withdrawal history
-        const { data: historyData } = await api.get('/api/v1/wallet/withdrawal-history')
-        if (historyData.success) {
-          console.log('Withdrawal history loaded:', historyData.data)
-          setWithdrawalList(historyData.data.withdrawals)
-        } else {
-          console.error("Failed to load withdrawal history:", historyData.message)
-          toast({
-            title: "Error",
-            description: "Failed to load withdrawal history",
-            variant: "destructive",
-          })
-        }
-      } catch (error: any) {
-        console.error("Failed to fetch data:", error)
+  
+  const fetchData = async (showSuccessToast = false) => {
+    try {
+      setLoading(true)
+      // Fetch wallet stats
+      const { data: walletData } = await api.get('/api/v1/wallet-stats')
+      if (walletData.success) {
+        console.log('Wallet stats loaded:', walletData.data)
+        setWalletStats(walletData.data)
+      } else {
+        console.error("Failed to load wallet stats:", walletData.message)
         toast({
           title: "Error",
-          description: error.response?.data?.message || "Failed to load data",
+          description: "Failed to load wallet statistics",
           variant: "destructive",
         })
-      } finally {
-        setLoading(false)
       }
-    }
 
+      // Fetch withdrawal history
+      const { data: historyData } = await api.get('/api/v1/wallet/withdrawal-history')
+      if (historyData.success) {
+        console.log('Withdrawal history loaded:', historyData.data)
+        setWithdrawalList(historyData.data.withdrawals)
+      } else {
+        console.error("Failed to load withdrawal history:", historyData.message)
+        toast({
+          title: "Error",
+          description: "Failed to load withdrawal history",
+          variant: "destructive",
+        })
+      }
+
+      // Show success toast if requested (after successful withdrawal)
+      if (showSuccessToast) {
+        setLastRefresh(new Date())
+        toast({
+          title: "✅ Data Refreshed",
+          description: "Withdrawal data has been updated successfully",
+          duration: 3000,
+        })
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch data:", error)
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || "Failed to load data",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Manual refresh function that can be called externally
+  const refreshData = () => fetchData(true)
+
+  useEffect(() => {
     fetchData()
   }, [])
 
@@ -146,25 +151,36 @@ export function WithdrawalsPage() {
           <h2 className="text-3xl font-bold tracking-tight">Withdrawals</h2>
           <p className="text-muted-foreground">Manage your campaign fund withdrawals</p>
         </div>
-        <DialogProvider>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Wallet className="mr-2 h-4 w-4" />
-                Request Withdrawal
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Request Withdrawal</DialogTitle>
-                <DialogDescription>
-                  Enter your mobile money details to withdraw funds from your campaign.
-                </DialogDescription>
-              </DialogHeader>
-              <WithdrawalForm />
-            </DialogContent>
-          </Dialog>
-        </DialogProvider>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={refreshData}
+            disabled={loading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+          <DialogProvider>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>
+                  <Wallet className="mr-2 h-4 w-4" />
+                  Request Withdrawal
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Request Withdrawal</DialogTitle>
+                  <DialogDescription>
+                    Enter your mobile money details to withdraw funds from your campaign.
+                  </DialogDescription>
+                </DialogHeader>
+                <WithdrawalForm />
+              </DialogContent>
+            </Dialog>
+          </DialogProvider>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -189,7 +205,10 @@ export function WithdrawalsPage() {
           </CardContent>
         </Card>
         <Card>
-          
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Withdrawals</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{walletStats.total_withdrawals}</div>
             <p className="text-xs text-muted-foreground">Number of transactions</p>
@@ -209,8 +228,17 @@ export function WithdrawalsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Withdrawal History</CardTitle>
-          <CardDescription>Track your withdrawal requests and their status</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Withdrawal History</CardTitle>
+              <CardDescription>Track your withdrawal requests and their status</CardDescription>
+            </div>
+            {lastRefresh && (
+              <div className="text-xs text-muted-foreground">
+                Last updated: {lastRefresh.toLocaleTimeString()}
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

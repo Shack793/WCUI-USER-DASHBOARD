@@ -37,7 +37,7 @@ export function SupportPage() {
         </Card>
 
         {/* Quick Help */}
-        <Card>
+       {/* <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <HelpCircle className="h-5 w-5" />
@@ -61,7 +61,7 @@ export function SupportPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+        </Card>*/}
       </div>
 
       {/* Contact Information */}
@@ -76,14 +76,14 @@ export function SupportPage() {
               <Mail className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Email Support</p>
-                <p className="text-sm text-muted-foreground">support@pixfund.com</p>
+                <p className="text-sm text-muted-foreground">support@wgcrowdfunding.com</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="h-5 w-5 text-muted-foreground" />
               <div>
                 <p className="font-medium">Phone Support</p>
-                <p className="text-sm text-muted-foreground">+1 (555) 123-4567</p>
+                <p className="text-sm text-muted-foreground">+233 (0) 123-4567</p>
               </div>
             </div>
           </div>
@@ -107,14 +107,15 @@ export function SupportPage() {
           <div className="space-y-2">
             <h4 className="font-medium">What are the platform fees?</h4>
             <p className="text-sm text-muted-foreground">
-              We charge a 5% platform fee on successfully funded campaigns, plus payment processing fees of 2.9% + $0.30
+              We charge a 2% platform fee on successfully funded campaigns, plus payment processing fees of 2.9% + $0.30
               per transaction.
             </p>
           </div>
           <div className="space-y-2">
             <h4 className="font-medium">How do I withdraw my funds?</h4>
             <p className="text-sm text-muted-foreground">
-              You can request withdrawals from your dashboard. Funds are typically transferred to your bank account
+              You can request withdrawals from your dashboard. Funds are typically transferred to your Momo instantly or to your
+              bank account within 2-5 business days.
               within 2-5 business days.
             </p>
           </div>
