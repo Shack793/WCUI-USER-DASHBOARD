@@ -976,7 +976,7 @@ export function BoostCampaignPage() {
         })
 
         // Also try alert as backup
-        alert('✅ Guest Boost Successful!\nThank you for your boost! Contact support if payment was deducted.')
+        alert('✅ Boost Successful!\nThank you for your boost! Contact support if payment was deducted.')
 
         console.log('✅ Guest boost recorded successfully')
 

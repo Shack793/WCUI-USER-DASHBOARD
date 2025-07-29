@@ -262,7 +262,7 @@ export function WithdrawalsPage() {
                       {withdrawal.currency} {Number(withdrawal.amount).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      {withdrawal.method}
+                      Mobile Money
                     </TableCell>
                     <TableCell>
                       {new Date(withdrawal.date).toLocaleDateString()}

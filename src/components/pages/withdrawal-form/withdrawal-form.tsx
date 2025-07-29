@@ -142,10 +142,32 @@ export function WithdrawalForm() {
         
       } catch (error: any) {
         console.error('❌ Withdrawal failed:', error);
+        
+        // Enhanced error handling to show specific server errors
+        let errorMessage = 'Failed to process withdrawal';
+        
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response?.data?.errors) {
+          // Handle validation errors
+          const errors = error.response.data.errors;
+          errorMessage = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`).join('\n');
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        console.log('🔍 Detailed error info:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: error.message
+        });
+        
         toast({
           variant: 'destructive',
           title: 'Withdrawal Failed',
-          description: error.message || error.response?.data?.message || 'Failed to process withdrawal',
+          description: errorMessage,
         });
       }
     } catch (error: any) {

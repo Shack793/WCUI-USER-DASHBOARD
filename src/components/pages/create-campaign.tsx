@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { ArrowLeft, Upload, X, Calendar, DollarSign, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -37,6 +37,14 @@ const getImageUrl = (url: string | null) => {
   return fullUrl
 };
 
+interface Category {
+  id: number
+  name: string
+  description: string
+  created_at: string | null
+  updated_at: string | null
+}
+
 interface CreateCampaignData {
   user_id: number
   category_id: number
@@ -57,6 +65,8 @@ export function CreateCampaignPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [categories, setCategories] = useState<Category[]>([])
+  const [loadingCategories, setLoadingCategories] = useState(true)
   const [formData, setFormData] = useState<CreateCampaignData>({
     user_id: 1, // This should come from auth context
     category_id: 1,
@@ -70,6 +80,30 @@ export function CreateCampaignPage() {
     visibility: "public",
     image_url: "",
   })
+
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoadingCategories(true)
+        const response = await dashboardAPI.getCategories()
+        console.log('Fetched categories:', response.data)
+        setCategories(response.data || [])
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+        // Set fallback categories if API fails
+        setCategories([
+          { id: 1, name: "General", description: "General category", created_at: null, updated_at: null },
+          { id: 2, name: "Education", description: "Education category", created_at: null, updated_at: null },
+          { id: 3, name: "Health", description: "Health category", created_at: null, updated_at: null },
+        ])
+      } finally {
+        setLoadingCategories(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   // Generate slug from title
   const generateSlug = (title: string): string => {
@@ -293,7 +327,7 @@ export function CreateCampaignPage() {
             <div className="space-y-2">
               <Label htmlFor="goal_amount">Goal Amount (GHS) *</Label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₵</span>
                 <Input
                   id="goal_amount"
                   type="number"
@@ -346,18 +380,22 @@ export function CreateCampaignPage() {
               <Select 
                 value={formData.category_id.toString()} 
                 onValueChange={(value) => handleInputChange('category_id', parseInt(value))}
+                disabled={loadingCategories}
               >
                 <SelectTrigger className="h-12">
-                  <SelectValue placeholder="Select category" />
+                  <SelectValue placeholder={loadingCategories ? "Loading categories..." : "Select category"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">General</SelectItem>
-                  <SelectItem value="2">Education</SelectItem>
-                  <SelectItem value="3">Health</SelectItem>
-                  <SelectItem value="4">Environment</SelectItem>
-                  <SelectItem value="5">Community</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {loadingCategories && (
+                <p className="text-xs text-muted-foreground">Loading categories...</p>
+              )}
             </div>
 
             {/* Visibility */}

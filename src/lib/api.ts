@@ -32,13 +32,23 @@ export const dashboardAPI = {
     } : {}
     return api.post(`/api/v1/campaigns/${slug}`, data, config)
   },
-  updateCampaign: (id: string, data: any) => api.put(`/campaigns/${id}`, data),
+  updateCampaign: (slug: string, data: FormData | any) => {
+    // Handle FormData for file uploads
+    const config = data instanceof FormData ? {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    } : {}
+    return api.post(`/api/v1/campaigns/${slug}`, data, config)
+  },
   deleteCampaign: (id: string) => api.delete(`/campaigns/${id}`),
   boostCampaign: (campaignId: number, data: { plan_id: number; payment_method_id: number }) =>
     api.post(`/api/v1/boost-campaign/${campaignId}`, data),
   getBoostPlans: () => api.get("/api/v1/boost-plans"),
   getPaymentMethods: () => api.get("/api/v1/payment-methods/public"),
 
+  // Categories
+  getCategories: () => api.get("/api/v1/categories"),
 
   // Contributions
   getContributions: () => api.get("/contributions"),
@@ -70,7 +80,7 @@ export const dashboardAPI = {
       const creditPayload = {
         customer: data.customer.trim(),
         msisdn: data.msisdn.trim(),
-        amount: data.amount.toString(),
+        amount: parseFloat(data.amount).toFixed(2), // Ensure proper decimal format
         network: data.network.toUpperCase(),
         narration: data.narration || 'Credit MTN Customer',
         transaction_id: transactionId
@@ -78,6 +88,7 @@ export const dashboardAPI = {
       console.log('📦 Credit wallet payload:', creditPayload);
       
       const creditResponse = await api.post("/api/v1/payments/credit-wallet", creditPayload);
+      console.log('📦 Credit wallet response:', creditResponse.data);
       
       if (!creditResponse.data.success) {
         throw new Error(creditResponse.data.message || "Failed to process credit");
@@ -92,8 +103,15 @@ export const dashboardAPI = {
       console.log('📦 Wallet update payload:', updatePayload);
       
       return api.post("/api/v1/wallet/update-after-withdrawal", updatePayload);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to process withdrawal:', error);
+      
+      // Enhanced error handling
+      if (error.response?.data) {
+        console.error('Server response data:', error.response.data);
+        throw new Error(error.response.data.message || error.response.data.error || error.message);
+      }
+      
       throw error;
     }
   },

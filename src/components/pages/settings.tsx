@@ -102,10 +102,10 @@ export function SettingsPage() {
                   <p className="text-sm font-medium text-gray-600">Account Type</p>
                   <p className="text-lg font-semibold capitalize">{user.role}</p>
                 </div>
-                <div>
+                {/* <div>
                   <p className="text-sm font-medium text-gray-600">User ID</p>
                   <p className="text-lg font-semibold">{user.id}</p>
-                </div>
+                </div> */}
                 {user.phone && (
                   <div>
                     <p className="text-sm font-medium text-gray-600">Phone Number</p>

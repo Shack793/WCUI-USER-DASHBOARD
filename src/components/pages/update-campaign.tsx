@@ -423,23 +423,21 @@ export function UpdateCampaignPage() {
               {/* Date Range */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Start Date *</Label>
+                  <Label htmlFor="start_date">Start Date</Label>
                   <Input
                     id="start_date"
                     type="date"
                     value={formData.start_date}
                     onChange={(e) => handleInputChange('start_date', e.target.value)}
-                    required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">End Date *</Label>
+                  <Label htmlFor="end_date">End Date</Label>
                   <Input
                     id="end_date"
                     type="date"
                     value={formData.end_date}
                     onChange={(e) => handleInputChange('end_date', e.target.value)}
-                    required
                   />
                 </div>
               </div>
