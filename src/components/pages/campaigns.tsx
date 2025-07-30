@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Plus, Calendar, DollarSign, Zap, Edit } from "lucide-react"
+import { Plus, Calendar, Zap, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -249,7 +249,7 @@ export function CampaignsPage() {
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm">
-                        <DollarSign className="mr-1 h-4 w-4" />
+                       {/* <span className="mr-1 text-muted-foreground font-medium">₵</span> */}
                         {formatCurrency(currentAmount)} raised
                       </div>
                       <div className="text-sm text-muted-foreground">
