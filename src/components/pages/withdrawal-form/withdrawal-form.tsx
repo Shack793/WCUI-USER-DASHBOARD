@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -42,6 +42,7 @@ export function WithdrawalForm() {
   const { balance, currency, loading: balanceLoading, refetchBalance } = useWalletBalance();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
+  const [isNameEnquiry, setIsNameEnquiry] = useState(false);
   const [successDetails, setSuccessDetails] = useState<{
     amount: string;
     newBalance: string;
@@ -52,6 +53,7 @@ export function WithdrawalForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<FormData>({
@@ -66,6 +68,45 @@ export function WithdrawalForm() {
 
   const msisdn = watch('msisdn');
   const network = useNetworkDetection(msisdn);
+
+  // Name enquiry effect
+  useEffect(() => {
+    const performNameEnquiry = async () => {
+      if (msisdn && msisdn.length === 10 && network) {
+        console.log('🔍 Performing name enquiry for:', { msisdn, network });
+        setIsNameEnquiry(true);
+        
+        try {
+          const payload = {
+            msisdn: msisdn,
+            network: network
+          };
+          
+          console.log('📦 Name enquiry payload:', payload);
+          const response = await dashboardAPI.nameEnquiry(payload);
+          console.log('📦 Name enquiry response:', response.data);
+          
+          if (response.data.success && response.data.data.name) {
+            setValue('customer', response.data.data.name);
+            console.log('✅ Name populated:', response.data.data.name);
+          } else {
+            console.log('⚠️ No name found in response');
+          }
+        } catch (error: any) {
+          console.error('❌ Name enquiry failed:', error);
+          console.error('Error details:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+          });
+        } finally {
+          setIsNameEnquiry(false);
+        }
+      }
+    };
+
+    performNameEnquiry();
+  }, [msisdn, network, setValue]);
 
   const onSubmit = async (data: FormData) => {
     try {
@@ -242,19 +283,6 @@ export function WithdrawalForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="customer">Name</Label>
-          <Input
-            id="customer"
-            type="text"
-            placeholder="Enter your full name"
-            {...register('customer')}
-          />
-          {errors.customer && (
-            <p className="text-sm text-red-500">{errors.customer.message}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="msisdn">Phone Number</Label>
           <Input
             id="msisdn"
@@ -267,6 +295,22 @@ export function WithdrawalForm() {
           )}
           {network && (
             <p className="text-sm text-green-600">Network detected: {network}</p>
+          )}
+          {isNameEnquiry && (
+            <p className="text-sm text-blue-600">Looking up account name...</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="customer">Name</Label>
+          <Input
+            id="customer"
+            type="text"
+            placeholder="Enter your full name"
+            {...register('customer')}
+          />
+          {errors.customer && (
+            <p className="text-sm text-red-500">{errors.customer.message}</p>
           )}
         </div>
 

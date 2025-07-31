@@ -116,6 +116,10 @@ export const dashboardAPI = {
     }
   },
   getWalletBalance: () => api.get("/api/v1/wallet/balance"),
+  
+  // Name enquiry for mobile money
+  nameEnquiry: (data: { msisdn: string; network: string }) => 
+    api.post("/api/v1/wallet/name-enquiry", data),
 
   // Notifications
   getNotifications: () => api.get("/notifications"),
