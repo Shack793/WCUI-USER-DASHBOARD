@@ -159,6 +159,7 @@ export function BoostCampaignPage() {
   })
   const [paymentStep, setPaymentStep] = useState<'form' | 'processing' | 'checking' | 'boosting'>('form')
   const [timeRemaining, setTimeRemaining] = useState<number>(0)
+  const [isNameEnquiry, setIsNameEnquiry] = useState(false)
 
   // Add logging on component mount and test API connectivity
   useEffect(() => {
@@ -263,6 +264,48 @@ export function BoostCampaignPage() {
       setMomoFields((prev) => ({ ...prev, network: "" }));
     }
   }, [momoFields.msisdn])
+
+  // Name enquiry for MoMo when number is complete
+  useEffect(() => {
+    const performNameEnquiry = async () => {
+      const msisdn = momoFields.msisdn || "";
+      const network = momoFields.network;
+      
+      if (msisdn && msisdn.length === 10 && network) {
+        console.log('🔍 Performing name enquiry for boost campaign:', { msisdn, network });
+        setIsNameEnquiry(true);
+        
+        try {
+          const payload = {
+            msisdn: msisdn,
+            network: network
+          };
+          
+          console.log('📦 Boost campaign name enquiry payload:', payload);
+          const response = await dashboardAPI.nameEnquiry(payload);
+          console.log('📦 Boost campaign name enquiry response:', response.data);
+          
+          if (response.data.success && response.data.data.name) {
+            setMomoFields(prev => ({ ...prev, customer: response.data.data.name }));
+            console.log('✅ Name populated in boost campaign:', response.data.data.name);
+          } else {
+            console.log('⚠️ No name found in boost campaign response');
+          }
+        } catch (error: any) {
+          console.error('❌ Boost campaign name enquiry failed:', error);
+          console.error('Error details:', {
+            status: error.response?.status,
+            data: error.response?.data,
+            message: error.message
+          });
+        } finally {
+          setIsNameEnquiry(false);
+        }
+      }
+    };
+
+    performNameEnquiry();
+  }, [momoFields.msisdn, momoFields.network]);
 
   // Set amount when plan is selected
   useEffect(() => {
@@ -1398,18 +1441,6 @@ export function BoostCampaignPage() {
 
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="customer">Name *</Label>
-                        <Input
-                          id="customer"
-                          type="text"
-                          placeholder="Enter your full name"
-                          value={momoFields.customer}
-                          onChange={(e) => setMomoFields(prev => ({ ...prev, customer: e.target.value }))}
-                          className="h-12"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
                         <Label htmlFor="msisdn">Mobile Number *</Label>
                         <Input
                           id="msisdn"
@@ -1417,6 +1448,24 @@ export function BoostCampaignPage() {
                           placeholder="e.g., 0501769307"
                           value={momoFields.msisdn}
                           onChange={(e) => setMomoFields(prev => ({ ...prev, msisdn: e.target.value }))}
+                          className="h-12"
+                        />
+                        {momoFields.network && (
+                          <p className="text-sm text-green-600">Network detected: {momoFields.network}</p>
+                        )}
+                        {isNameEnquiry && (
+                          <p className="text-sm text-blue-600">Looking up account name...</p>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="customer">Name *</Label>
+                        <Input
+                          id="customer"
+                          type="text"
+                          placeholder="Enter your full name"
+                          value={momoFields.customer}
+                          onChange={(e) => setMomoFields(prev => ({ ...prev, customer: e.target.value }))}
                           className="h-12"
                         />
                       </div>
@@ -1448,7 +1497,7 @@ export function BoostCampaignPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="narration">Narration</Label>
+                      <Label htmlFor="narration">Comment</Label>
                       <Input
                         id="narration"
                         type="text"
