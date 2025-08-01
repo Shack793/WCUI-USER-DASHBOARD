@@ -134,6 +134,10 @@ export const dashboardAPI = {
   // User profile
   getUserProfile: () => api.get("/user/profile"),
   updateUserProfile: (data: any) => api.put("/user/profile", data),
+  updateUserProfileNew: (data: { name: string; email: string; phone: string; country: string }) => 
+    api.put("/api/v1/user/update", data),
+  updateUserPassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => 
+    api.put("/api/v1/user/update-password", data),
 }
 
 // Campaign API endpoints

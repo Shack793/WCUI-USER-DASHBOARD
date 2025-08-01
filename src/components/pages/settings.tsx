@@ -1,17 +1,48 @@
 import { User, Lock } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { dashboardAPI } from "@/lib/api"
 
 export function SettingsPage() {
   const { user, loading } = useAuth()
   const { toast } = useToast()
   const [isUpdating, setIsUpdating] = useState(false)
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false)
+  
+  // Profile form state
+  const [profileData, setProfileData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    country: ""
+  })
+  
+  // Password form state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  })
+
+  // Initialize profile data when user loads
+  useEffect(() => {
+    if (user) {
+      const nameParts = getNameParts(user.name)
+      setProfileData({
+        firstName: nameParts.firstName,
+        lastName: nameParts.lastName,
+        email: user.email || "",
+        phone: user.phone || "",
+        country: user.country || ""
+      })
+    }
+  }, [user])
 
   // Split the user's full name into first and last name
   const getNameParts = (fullName: string) => {
@@ -22,21 +53,76 @@ export function SettingsPage() {
     }
   }
 
-  const nameParts = user ? getNameParts(user.name) : { firstName: "", lastName: "" }
-
-  // Handle profile update (placeholder for future API integration)
+  // Populate form data when user data loads
+  useEffect(() => {
+    if (user) {
+      const nameParts = getNameParts(user.name)
+      setProfileData({
+        firstName: nameParts.firstName,
+        lastName: nameParts.lastName,
+        email: user.email || "",
+        phone: user.phone || "",
+        country: user.country || ""
+      })
+      console.log('📋 Profile data populated from user:', {
+        firstName: nameParts.firstName,
+        lastName: nameParts.lastName,
+        email: user.email,
+        phone: user.phone,
+        country: user.country
+      })
+    }
+  }, [user])
   const handleProfileUpdate = async () => {
     setIsUpdating(true)
     try {
-      // TODO: Implement API call to update profile
-      toast({
-        title: "Profile Updated",
-        description: "Your profile information has been updated successfully.",
+      console.log('🔄 Updating user profile...')
+      
+      // Prepare the payload
+      const payload = {
+        name: `${profileData.firstName} ${profileData.lastName}`.trim(),
+        email: profileData.email,
+        phone: profileData.phone,
+        country: profileData.country
+      }
+      
+      console.log('📦 Profile update payload:', payload)
+      
+      // Call the API
+      const response = await dashboardAPI.updateUserProfileNew(payload)
+      console.log('✅ Profile update response:', response.data)
+      
+      if (response.data.success) {
+        toast({
+          title: "Profile Updated",
+          description: response.data.message || "Your profile information has been updated successfully.",
+        })
+        console.log('✅ Profile updated successfully')
+      } else {
+        throw new Error(response.data.message || "Failed to update profile")
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Profile update failed:', error)
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
       })
-    } catch (error) {
+      
+      let errorMessage = "Failed to update profile. Please try again."
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors
+        errorMessage = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`).join('\n')
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Update Failed",
-        description: "Failed to update profile. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -44,19 +130,77 @@ export function SettingsPage() {
     }
   }
 
-  // Handle password update (placeholder for future API integration)
+  // Handle password update with API integration
   const handlePasswordUpdate = async () => {
     setIsUpdatingPassword(true)
     try {
-      // TODO: Implement API call to update password
-      toast({
-        title: "Password Updated",
-        description: "Your password has been updated successfully.",
+      console.log('🔄 Updating user password...')
+      
+      // Validation
+      if (!passwordData.currentPassword) {
+        throw new Error("Current password is required")
+      }
+      if (!passwordData.newPassword) {
+        throw new Error("New password is required")
+      }
+      if (passwordData.newPassword !== passwordData.confirmPassword) {
+        throw new Error("New password and confirmation do not match")
+      }
+      if (passwordData.newPassword.length < 6) {
+        throw new Error("New password must be at least 6 characters long")
+      }
+      
+      // Prepare the payload
+      const payload = {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword,
+        confirmPassword: passwordData.confirmPassword
+      }
+      
+      console.log('📦 Password update payload:', { ...payload, currentPassword: '[HIDDEN]', newPassword: '[HIDDEN]', confirmPassword: '[HIDDEN]' })
+      
+      // Call the API
+      const response = await dashboardAPI.updateUserPassword(payload)
+      console.log('✅ Password update response:', response.data)
+      
+      if (response.data.success) {
+        // Clear password fields
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: ""
+        })
+        
+        toast({
+          title: "Password Updated",
+          description: response.data.message || "Your password has been updated successfully.",
+        })
+        console.log('✅ Password updated successfully')
+      } else {
+        throw new Error(response.data.message || "Failed to update password")
+      }
+      
+    } catch (error: any) {
+      console.error('❌ Password update failed:', error)
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
       })
-    } catch (error) {
+      
+      let errorMessage = "Failed to update password. Please try again."
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors
+        errorMessage = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`).join('\n')
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Update Failed",
-        description: "Failed to update password. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -91,7 +235,7 @@ export function SettingsPage() {
             ) : user ? (
               <div className="grid gap-3 md:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Full Name</p>
+                  <p className="text-sm font-medium text-gray-600">Name</p>
                   <p className="text-lg font-semibold">{user.name}</p>
                 </div>
                 <div>
@@ -140,7 +284,8 @@ export function SettingsPage() {
                 <Label htmlFor="firstName">First Name</Label>
                 <Input 
                   id="firstName" 
-                  defaultValue={nameParts.firstName}
+                  value={profileData.firstName}
+                  onChange={(e) => setProfileData(prev => ({...prev, firstName: e.target.value}))}
                   placeholder="Enter your first name"
                   disabled={loading}
                 />
@@ -149,7 +294,8 @@ export function SettingsPage() {
                 <Label htmlFor="lastName">Last Name</Label>
                 <Input 
                   id="lastName" 
-                  defaultValue={nameParts.lastName}
+                  value={profileData.lastName}
+                  onChange={(e) => setProfileData(prev => ({...prev, lastName: e.target.value}))}
                   placeholder="Enter your last name"
                   disabled={loading}
                 />
@@ -160,7 +306,8 @@ export function SettingsPage() {
               <Input 
                 id="email" 
                 type="email" 
-                defaultValue={user?.email || ""}
+                value={profileData.email}
+                onChange={(e) => setProfileData(prev => ({...prev, email: e.target.value}))}
                 placeholder="Enter your email address"
                 disabled={loading}
               />
@@ -170,7 +317,8 @@ export function SettingsPage() {
               <Input 
                 id="phone" 
                 type="tel" 
-                defaultValue={user?.phone || ""}
+                value={profileData.phone}
+                onChange={(e) => setProfileData(prev => ({...prev, phone: e.target.value}))}
                 placeholder="Enter your phone number"
                 disabled={loading}
               />
@@ -179,7 +327,8 @@ export function SettingsPage() {
               <Label htmlFor="country">Country</Label>
               <Input 
                 id="country" 
-                defaultValue={user?.country || ""}
+                value={profileData.country}
+                onChange={(e) => setProfileData(prev => ({...prev, country: e.target.value}))}
                 placeholder="Enter your country"
                 disabled={loading}
               />
@@ -219,6 +368,8 @@ export function SettingsPage() {
               <Input 
                 id="currentPassword" 
                 type="password" 
+                value={passwordData.currentPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, currentPassword: e.target.value}))}
                 placeholder="Enter your current password"
                 disabled={loading}
               />
@@ -228,6 +379,8 @@ export function SettingsPage() {
               <Input 
                 id="newPassword" 
                 type="password" 
+                value={passwordData.newPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, newPassword: e.target.value}))}
                 placeholder="Enter a new password"
                 disabled={loading}
               />
@@ -237,6 +390,8 @@ export function SettingsPage() {
               <Input 
                 id="confirmPassword" 
                 type="password" 
+                value={passwordData.confirmPassword}
+                onChange={(e) => setPasswordData(prev => ({...prev, confirmPassword: e.target.value}))}
                 placeholder="Confirm your new password"
                 disabled={loading}
               />

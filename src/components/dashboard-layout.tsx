@@ -1,5 +1,5 @@
 import type React from "react"
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   Bell,
   LayoutDashboard,
@@ -136,12 +136,23 @@ function AppSidebar() {
 
 function DashboardHeader() {
   const { user, logout, loading } = useAuth()
+  const navigate = useNavigate()
 
   const handleLogout = async () => {
     try {
+      console.log('Logging out user...')
       await logout()
+      console.log('Logout successful, redirecting to login page')
+      // The auth context will handle the navigation to "/"
+      // but we need to override it to go to "/login"
+      setTimeout(() => {
+        navigate("/login", { replace: true })
+      }, 100)
     } catch (error) {
       console.error("Logout error:", error)
+      // Even if logout fails, clear local state and redirect
+      localStorage.removeItem('authToken')
+      navigate("/login", { replace: true })
     }
   }
 

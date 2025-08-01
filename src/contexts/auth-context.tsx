@@ -113,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       authApi.removeToken()
       setUser(null)
-      navigate("/")
+      navigate("/login")
       setLoading(false)
     }
   }

@@ -1,4 +1,4 @@
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./contexts/auth-context"
 import { ProtectedRoute } from "./components/protected-route"
 import { LoginPage } from "./components/pages/login"
@@ -20,6 +20,9 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
+        {/* Root path redirects to login */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
