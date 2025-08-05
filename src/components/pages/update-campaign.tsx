@@ -21,9 +21,9 @@ const getImageUrl = (url: string | null) => {
   }
   
   if (url.startsWith('http')) {
-    // Fix localhost URLs to use 127.0.0.1:8000
+    // Fix localhost URLs to use production API
     if (url.includes('localhost/storage/')) {
-      const fixedUrl = url.replace('http://localhost/', 'http://127.0.0.1:8000/')
+      const fixedUrl = url.replace('http://localhost/', 'https://crowdfundingapi.wgtesthub.com/')
       console.log('Fixed localhost URL:', url, '→', fixedUrl)
       return fixedUrl
     }
@@ -31,7 +31,7 @@ const getImageUrl = (url: string | null) => {
     return url
   }
   
-  const fullUrl = `http://127.0.0.1:8000${url}`
+  const fullUrl = `https://crowdfundingapi.wgtesthub.com${url}`
   console.log('URL is relative, returning full URL:', fullUrl)
   return fullUrl
 }

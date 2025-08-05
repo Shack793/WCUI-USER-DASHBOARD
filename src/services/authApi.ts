@@ -78,7 +78,7 @@ export const authApi = {
 
   getUser: async (): Promise<AuthResponse> => {
     try {
-      const response = await api.get<AuthResponse>('/api/v1/me')
+      const response = await api.get<AuthResponse>('/api/v1/user')
       return response.data
     } catch (error: any) {
       console.error('Get user error:', error.response?.data || error.message)
@@ -99,15 +99,102 @@ export const authApi = {
     localStorage.removeItem('authToken')
   },
 
+  // Debug utility to inspect token
+  debugToken: (): void => {
+    const token = localStorage.getItem('authToken')
+    if (!token) {
+      console.log('🔍 DEBUG: No token found')
+      return
+    }
+
+    console.log('🔍 DEBUG: Token details:', {
+      hasToken: !!token,
+      tokenLength: token.length,
+      tokenStart: token.substring(0, 50),
+      tokenEnd: token.substring(token.length - 20),
+      tokenType: typeof token,
+      isJWTFormat: token.split('.').length === 3,
+      parts: token.split('.').length
+    })
+
+    // Try to decode if it's a JWT
+    try {
+      const parts = token.split('.')
+      if (parts.length === 3) {
+        const header = JSON.parse(atob(parts[0]))
+        const payload = JSON.parse(atob(parts[1]))
+        console.log('🔍 DEBUG: JWT Header:', header)
+        console.log('🔍 DEBUG: JWT Payload:', payload)
+      } else {
+        console.log('🔍 DEBUG: Not a JWT token - appears to be a simple string token')
+      }
+    } catch (error) {
+      console.log('🔍 DEBUG: Could not decode token:', error)
+    }
+  },
+
   isTokenExpired: (): boolean => {
     const token = localStorage.getItem('authToken')
-    if (!token) return true
+    if (!token) {
+      console.log('🔍 No token found')
+      return true
+    }
+    
+    console.log('🔍 Token found:', {
+      tokenLength: token.length,
+      tokenStart: token.substring(0, 50) + '...',
+      tokenType: typeof token
+    })
     
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]))
-      return payload.exp * 1000 < Date.now()
-    } catch {
-      return true
+      // Check if token has the correct JWT format (3 parts separated by dots)
+      const parts = token.split('.')
+      console.log('🔍 Token parts:', {
+        totalParts: parts.length,
+        partLengths: parts.map(p => p.length),
+        isJWTFormat: parts.length === 3
+      })
+      
+      if (parts.length !== 3) {
+        console.log('🔍 Invalid token format - not a standard JWT')
+        console.log('🔍 Token appears to be a simple string token, treating as valid')
+        // Many APIs use simple string tokens instead of JWT
+        // Don't invalidate the token just because it's not JWT format
+        return false
+      }
+
+      const payload = JSON.parse(atob(parts[1]))
+      console.log('🔍 Token payload:', {
+        hasExp: !!payload.exp,
+        exp: payload.exp,
+        iat: payload.iat,
+        aud: payload.aud,
+        sub: payload.sub
+      })
+
+      // If no expiration field, assume token is valid (some tokens don't have exp)
+      if (!payload.exp) {
+        console.log('🔍 Token has no expiration field - treating as valid')
+        return false
+      }
+
+      const currentTime = Math.floor(Date.now() / 1000) // Convert to seconds
+      const isExpired = payload.exp < currentTime
+      const timeUntilExpiry = payload.exp - currentTime
+
+      console.log('🔍 Token expiration check:', {
+        exp: payload.exp,
+        currentTime,
+        isExpired,
+        timeUntilExpiry: timeUntilExpiry > 0 ? `${Math.floor(timeUntilExpiry / 60)} minutes` : 'expired'
+      })
+
+      return isExpired
+    } catch (error) {
+      console.error('🔍 Error checking token expiration:', error)
+      console.log('🔍 Token parse error, but keeping token (likely a simple string token)')
+      // Don't treat parse errors as expiration - token might be a simple string
+      return false
     }
   }
 } 

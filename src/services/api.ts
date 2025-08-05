@@ -1,5 +1,5 @@
 import axiosInstance from '@/lib/axios';
-import type { DebitWalletPayload, DebitWalletResponse, CheckStatusPayload, CheckStatusResponse } from '@/lib/types';
+import type { DebitWalletPayload, DebitWalletResponse, CheckStatusResponse } from '@/lib/types';
 
 // Use the shared axiosInstance from lib/axios.ts, which already has the correct baseURL and interceptors
 // No need to create a new instance or set withCredentials

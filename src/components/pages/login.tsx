@@ -3,8 +3,6 @@ import { Link } from "react-router-dom"
 import { useAuth } from "../../contexts/auth-context"
 import { Button } from "../../components/ui/button"
 import { Input } from "../../components/ui/input"
-import { Facebook, Linkedin } from 'lucide-react'
-import { FcGoogle } from "react-icons/fc"
 
 export function LoginPage() {
   const [email, setEmail] = useState("")

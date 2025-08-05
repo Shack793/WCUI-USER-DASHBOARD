@@ -36,7 +36,7 @@ const contributions = [
 ]
 
 export function ContributionsPage() {
-  const [contributionList, setContributionList] = useState(contributions)
+  const [contributionList] = useState(contributions)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {

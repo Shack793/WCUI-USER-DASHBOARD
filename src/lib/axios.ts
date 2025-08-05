@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://crowdfundingapi.wgtesthub.com',
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -49,9 +49,23 @@ axiosInstance.interceptors.response.use(
       fullError: error.response?.data?.message || error.response?.data || error.message,
       headers: error.config?.headers
     });
+    
+    // Only redirect on 401 for auth-related endpoints, not all endpoints
     if (error.response?.status === 401) {
-      localStorage.removeItem('authToken');
-      window.location.href = '/';
+      const url = error.config?.url
+      // Only auto-redirect for specific auth endpoints
+      if (url?.includes('/me') || url?.includes('/user') || url?.includes('/dashboard')) {
+        console.log('Authentication failed for protected endpoint, redirecting to login')
+        localStorage.removeItem('authToken');
+        // Use setTimeout to avoid immediate redirect during page load
+        setTimeout(() => {
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }, 100);
+      } else {
+        console.log('401 error but not auto-redirecting for endpoint:', url)
+      }
     }
     return Promise.reject(error);
   }

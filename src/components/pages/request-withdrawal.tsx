@@ -61,7 +61,7 @@ export function RequestWithdrawalPage() {
       console.log('Submitting withdrawal request:', submitData)
 
       // Call API to create withdrawal request
-      const response = await dashboardAPI.requestWithdrawal(submitData)
+      const response = await dashboardAPI.createWithdrawalRequest(submitData)
 
       console.log('Withdrawal request created:', response.data)
 

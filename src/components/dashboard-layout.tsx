@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Settings,
   Target,
-  Users,
   Wallet,
   Search,
   LogOut,
@@ -39,6 +38,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 const navigationItems = [
@@ -129,7 +129,7 @@ function AppSidebar() {
       <SidebarFooter>
         <div className="p-4 text-xs text-muted-foreground">WG Crowdfunding, 2025</div>
       </SidebarFooter>
-      <SidebarRail />
+      <SidebarRail className="w-8 hover:w-12 transition-all duration-200 cursor-pointer" />
     </Sidebar>
   )
 }
@@ -225,14 +225,61 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+function SidebarOverlay() {
+  const { isMobile, openMobile, setOpenMobile } = useSidebar()
+
+  if (!isMobile || !openMobile) return null
+
   return (
-    <SidebarProvider>
+    <div
+      className="fixed inset-0 z-40 bg-black/50 md:hidden"
+      onClick={() => setOpenMobile(false)}
+      aria-hidden="true"
+    />
+  )
+}
+
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const { isMobile, openMobile, setOpenMobile, open, setOpen } = useSidebar()
+
+  const handleContentClick = () => {
+    if (isMobile && openMobile) {
+      // On mobile, close the overlay sidebar
+      setOpenMobile(false)
+    } else if (!isMobile && open) {
+      // On desktop, collapse the sidebar
+      setOpen(false)
+    }
+  }
+
+  return (
+    <>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarOverlay />
+      <SidebarInset 
+        onClick={handleContentClick}
+        className={`${
+          (!isMobile && open) || (isMobile && openMobile) 
+            ? 'cursor-pointer' 
+            : ''
+        }`}
+        title={
+          (!isMobile && open) || (isMobile && openMobile)
+            ? 'Click to close sidebar'
+            : undefined
+        }
+      >
         <DashboardHeader />
         <main className="flex-1 space-y-4 p-6">{children}</main>
       </SidebarInset>
+    </>
+  )
+}
+
+export function DashboardLayout({ children }: DashboardLayoutProps) {
+  return (
+    <SidebarProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </SidebarProvider>
   )
 }

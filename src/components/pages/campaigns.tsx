@@ -19,9 +19,9 @@ const getImageUrl = (url: string | null) => {
   }
 
   if (url.startsWith('http')) {
-    // Fix localhost URLs to use 127.0.0.1:8000
+    // Fix localhost URLs to use production API
     if (url.includes('localhost/storage/')) {
-      const fixedUrl = url.replace('http://localhost/', 'http://127.0.0.1:8000/')
+      const fixedUrl = url.replace('http://localhost/', 'https://crowdfundingapi.wgtesthub.com/')
       console.log('Fixed localhost URL:', url, '→', fixedUrl)
       return fixedUrl
     }
@@ -29,7 +29,7 @@ const getImageUrl = (url: string | null) => {
     return url
   }
 
-  const fullUrl = `http://127.0.0.1:8000${url}`
+  const fullUrl = `https://crowdfundingapi.wgtesthub.com${url}`
   console.log('URL is relative, returning full URL:', fullUrl)
   return fullUrl
 };
@@ -86,10 +86,16 @@ export function CampaignsPage() {
       try {
         setLoading(true)
         setError(null)
+        console.log('🔍 Fetching user-specific campaigns...')
         const response = await dashboardAPI.getDashboardCampaigns()
-        setCampaignList(response.data)
+        console.log('🔍 Campaigns response:', response.data)
+        
+        // Handle paginated response from Laravel
+        const campaigns = response.data.data || response.data
+        console.log('🔍 Campaigns data:', campaigns)
+        setCampaignList(campaigns)
       } catch (error: any) {
-        console.error("Failed to fetch campaigns:", error)
+        console.error("Failed to fetch user campaigns:", error)
         setError(error.response?.data?.message || "Failed to fetch campaigns")
       } finally {
         setLoading(false)
@@ -180,8 +186,15 @@ export function CampaignsPage() {
       {campaignList.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
-            <div className="text-center text-muted-foreground">
-              <p>No campaigns found. Create your first campaign to get started!</p>
+            <div className="text-center text-muted-foreground space-y-4">
+              <div>
+                <h3 className="text-lg font-medium text-foreground mb-2">No campaigns yet</h3>
+                <p>You haven't created any campaigns yet. Start your first fundraising campaign today!</p>
+              </div>
+              <Button onClick={() => navigate('/campaigns/create')} className="mt-4">
+                <Plus className="mr-2 h-4 w-4" />
+                Create Your First Campaign
+              </Button>
             </div>
           </CardContent>
         </Card>

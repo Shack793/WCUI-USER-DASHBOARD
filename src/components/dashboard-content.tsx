@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { DollarSign, Target, Wallet, AlertCircle } from "lucide-react"
-import api from "@/lib/api"
+import { dashboardAPI } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -49,7 +49,7 @@ const chartConfig = {
 // Constants for the dashboard display
 
 export function DashboardContent() {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [dashboardData, setDashboardData] = useState<DashboardApiResponse | null>(null)
@@ -61,11 +61,25 @@ export function DashboardContent() {
         return
       }
 
+      console.log('🔍 Current authenticated user:', user)
+      console.log('🔍 Authentication status:', isAuthenticated)
+
       try {
         setLoading(true)
-        const { data } = await api.get('/api/v1/userdashboard')
+        console.log('🔍 Fetching user dashboard data...')
+        const { data } = await dashboardAPI.getUserDashboard()
+        console.log('🔍 Raw API response:', data)
+        
         if (data) {
-          console.log('Dashboard data loaded:', data)
+          console.log('🔍 Dashboard data structure:', {
+            totalCampaigns: data.totalCampaigns,
+            totalContributions: data.totalContributions,
+            withdrawals: data.withdrawals,
+            expiredCampaigns: data.expiredCampaigns,
+            hasChartData: !!data.chartData,
+            hasRecentContributions: !!data.recentContributions,
+            dataKeys: Object.keys(data)
+          })
           setDashboardData(data)
         } else {
           console.error("Failed to load dashboard data")
@@ -88,7 +102,7 @@ export function DashboardContent() {
     }
 
     fetchDashboardData()
-  }, [isAuthenticated, toast])
+  }, [isAuthenticated, user, toast])
 
   return (
     <div className="space-y-6">

@@ -41,6 +41,9 @@ function App() {
           <Route path="/settings" element={<DashboardLayout><SettingsPage /></DashboardLayout>} />
           <Route path="/support" element={<DashboardLayout><SupportPage /></DashboardLayout>} />
         </Route>
+        
+        {/* Catch-all route for any unmatched paths */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </AuthProvider>
   )

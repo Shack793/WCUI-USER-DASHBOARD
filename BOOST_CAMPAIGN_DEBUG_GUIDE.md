@@ -6,7 +6,7 @@ Based on the browser console logs, there are several issues preventing the boost
 
 ### 1. CORS Issues
 ```
-Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at http://127.0.0.1:8000/campaigns/1. (Reason: CORS header 'Access-Control-Allow-Origin' missing). Status code: 404.
+Cross-Origin Request Blocked: The Same Origin Policy disallows reading the remote resource at https://crowdfundingapi.wgtesthub.com/campaigns/1. (Reason: CORS header 'Access-Control-Allow-Origin' missing). Status code: 404.
 ```
 
 ### 2. Authentication Issues
@@ -129,7 +129,7 @@ I've added comprehensive logging and error handling to help debug:
 - [ ] Missing API endpoints created
 - [ ] JWT token validation working
 - [ ] Database connections working
-- [ ] Laravel server running on http://127.0.0.1:8000
+- [ ] Laravel server running on https://crowdfundingapi.wgtesthub.com
 
 ## 🔧 Quick Backend CORS Fix
 

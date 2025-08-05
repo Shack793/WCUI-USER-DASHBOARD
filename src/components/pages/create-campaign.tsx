@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { ArrowLeft, Upload, X, Calendar, DollarSign, Eye, EyeOff } from "lucide-react"
+import { ArrowLeft, Upload, X, Calendar, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,8 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { dashboardAPI } from "../../lib/api"
+import { useAuth } from "@/contexts/auth-context"
 
 // Helper function to get proper image URL
+/*
 const getImageUrl = (url: string | null) => {
   console.log('=== getImageUrl called (create-campaign) ===')
   console.log('Input URL:', url)
@@ -22,9 +24,9 @@ const getImageUrl = (url: string | null) => {
   }
 
   if (url.startsWith('http')) {
-    // Fix localhost URLs to use 127.0.0.1:8000
+    // Fix localhost URLs to use production API
     if (url.includes('localhost/storage/')) {
-      const fixedUrl = url.replace('http://localhost/', 'http://127.0.0.1:8000/')
+      const fixedUrl = url.replace('http://localhost/', 'https://crowdfundingapi.wgtesthub.com/')
       console.log('Fixed localhost URL:', url, '→', fixedUrl)
       return fixedUrl
     }
@@ -32,10 +34,11 @@ const getImageUrl = (url: string | null) => {
     return url
   }
 
-  const fullUrl = `http://127.0.0.1:8000${url}`
+  const fullUrl = `https://crowdfundingapi.wgtesthub.com${url}`
   console.log('URL is relative, returning full URL:', fullUrl)
   return fullUrl
 };
+*/
 
 interface Category {
   id: number
@@ -62,13 +65,14 @@ interface CreateCampaignData {
 
 export function CreateCampaignPage() {
   const navigate = useNavigate()
+  const { user, isAuthenticated } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
   const [loadingCategories, setLoadingCategories] = useState(true)
   const [formData, setFormData] = useState<CreateCampaignData>({
-    user_id: 1, // This should come from auth context
+    user_id: parseInt(user?.id || '0'), // Use authenticated user ID
     category_id: 1,
     title: "",
     slug: "",
@@ -80,6 +84,13 @@ export function CreateCampaignPage() {
     visibility: "public",
     image_url: "",
   })
+
+  // Update user_id when user context changes
+  useEffect(() => {
+    if (user?.id) {
+      setFormData(prev => ({ ...prev, user_id: parseInt(user.id) }))
+    }
+  }, [user])
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -168,6 +179,12 @@ export function CreateCampaignPage() {
     e.preventDefault()
     setError(null)
 
+    // Check authentication
+    if (!isAuthenticated || !user?.id) {
+      setError('You must be logged in to create a campaign')
+      return
+    }
+
     // Validation
     if (!formData.title.trim()) {
       setError('Campaign title is required')
@@ -200,7 +217,7 @@ export function CreateCampaignPage() {
       // Prepare form data for submission
       const submitData = new FormData()
 
-      // Add all form fields
+      // Add all form fields including authenticated user ID
       submitData.append('user_id', formData.user_id.toString())
       submitData.append('category_id', formData.category_id.toString())
       submitData.append('title', formData.title.trim())
@@ -221,7 +238,7 @@ export function CreateCampaignPage() {
       }
 
       // Debug: Log the form data being sent
-      console.log('Submitting campaign data:')
+      console.log('Submitting campaign data with authenticated user ID:', formData.user_id)
       for (let [key, value] of submitData.entries()) {
         console.log(key, value)
       }
@@ -268,8 +285,19 @@ export function CreateCampaignPage() {
         <div className="w-10"></div> {/* Spacer to balance the back button */}
       </div>
 
-      <div className="flex justify-center">
-        <Card className="w-full max-w-2xl shadow-lg border-0" style={{ boxShadow: '0 10px 25px -5px rgba(55, 183, 255, 0.1), 0 8px 10px -6px rgba(55, 183, 255, 0.1)' }}>
+      {!isAuthenticated || !user ? (
+        <div className="flex justify-center">
+          <Card className="w-full max-w-2xl shadow-lg border-0">
+            <CardContent className="pt-6">
+              <div className="text-center text-muted-foreground">
+                {!isAuthenticated ? "Please log in to create a campaign" : "Loading user data..."}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <Card className="w-full max-w-2xl shadow-lg border-0" style={{ boxShadow: '0 10px 25px -5px rgba(55, 183, 255, 0.1), 0 8px 10px -6px rgba(55, 183, 255, 0.1)' }}>
         <CardHeader>
           <CardTitle>Campaign Details</CardTitle>
           <CardDescription>Fill in the information below to create your campaign</CardDescription>
@@ -496,7 +524,8 @@ export function CreateCampaignPage() {
           </form>
         </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
     </div>
   )
 }

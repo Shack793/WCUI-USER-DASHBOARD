@@ -5,11 +5,17 @@ const api = axiosInstance;
 
 // API endpoints
 export const dashboardAPI = {
-  // Dashboard stats
-  getDashboardStats: () => api.get("/api/v1/dashboard/stats"),
+  // Dashboard stats (user-specific)
+  getDashboardStats: () => api.get("/api/v1/userdashboard"),
+  
+  // User dashboard (user-specific)
+  getUserDashboard: () => api.get("/api/v1/userdashboard"),
 
-  // Dashboard campaigns
-  getDashboardCampaigns: () => api.get("/api/v1/dashboard/campaigns"),
+  // Dashboard campaigns (user-specific)
+  getDashboardCampaigns: () => api.get("/api/v1/user/campaigns"),
+
+  // User-specific campaigns
+  getUserCampaigns: () => api.get("/api/v1/user/campaigns"),
 
   // Campaigns
   getCampaigns: () => api.get("/campaigns"),
@@ -21,6 +27,7 @@ export const dashboardAPI = {
         'Content-Type': 'multipart/form-data',
       },
     } : {}
+    
     return api.post("/api/v1/campaigns", data, config)
   },
   updateCampaignWithForm: (slug: string, data: FormData | any) => {
@@ -56,6 +63,8 @@ export const dashboardAPI = {
 
   // Withdrawals
   getWithdrawals: () => api.get("/api/v1/withdrawals"),
+  createWithdrawalRequest: (data: { amount: number; reason?: string | null }) =>
+    api.post("/api/v1/withdrawals", data),
   requestWithdrawal: async (data: {
     customer: string;
     msisdn: string;
