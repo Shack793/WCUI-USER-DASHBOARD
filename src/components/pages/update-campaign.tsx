@@ -179,12 +179,14 @@ export function UpdateCampaignPage() {
       // Validate file type
       if (!file.type.startsWith('image/')) {
         setError('Please select a valid image file')
+        event.target.value = '' // Reset input
         return
       }
       
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         setError('Image size should be less than 5MB')
+        event.target.value = '' // Reset input
         return
       }
 
@@ -203,7 +205,13 @@ export function UpdateCampaignPage() {
   // Remove uploaded image
   const removeImage = () => {
     setFormData(prev => ({ ...prev, image_file: undefined, thumbnail: "", image_url: "" }))
-    setImagePreview(campaign?.image_url ? getImageUrl(campaign.image_url) : null)
+    setImagePreview(null)
+    
+    // Reset the file input
+    const fileInput = document.getElementById('image-upload') as HTMLInputElement
+    if (fileInput) {
+      fileInput.value = ''
+    }
   }
 
   // Handle form submission
@@ -503,6 +511,7 @@ export function UpdateCampaignPage() {
                           accept="image/*"
                           onChange={handleImageUpload}
                           className="hidden"
+                          key={imagePreview ? 'has-image' : 'no-image'} // Force re-render when image changes
                         />
                       </div>
                       <p className="text-xs text-muted-foreground mt-2">
@@ -511,6 +520,24 @@ export function UpdateCampaignPage() {
                     </div>
                   )}
                 </div>
+                {/* Alternative upload button when image exists */}
+                {imagePreview && (
+                  <div className="flex gap-2">
+                    <Label htmlFor="image-upload-alt" className="cursor-pointer">
+                      <Button type="button" variant="outline" size="sm" className="w-full">
+                        Change Image
+                      </Button>
+                    </Label>
+                    <Input
+                      id="image-upload-alt"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      key={Date.now()} // Force unique key for re-render
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}

@@ -157,9 +157,9 @@ export function DashboardContent() {
         </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-5">
         {/* Chart */}
-        <Card className="col-span-4">
+        <Card className="lg:col-span-2 xl:col-span-3">
           <CardHeader>
             <CardTitle>Donation & Withdraw Progress</CardTitle>
             <CardDescription>Progress report for last 6 months</CardDescription>
@@ -203,7 +203,7 @@ export function DashboardContent() {
         </Card>
 
         {/* Recent Contributions */}
-        <Card className="col-span-3">
+        <Card className="lg:col-span-1 xl:col-span-2">
           <CardHeader>
             <CardTitle>Recent Contributions</CardTitle>
             <CardDescription>Latest contributions received</CardDescription>
@@ -222,11 +222,11 @@ export function DashboardContent() {
                         .join("")}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="ml-4 space-y-1">
-                    <p className="text-sm font-medium leading-none">{contribution.contributor}</p>
-                    <p className="text-sm text-muted-foreground">{contribution.campaign}</p>
+                  <div className="ml-4 space-y-1 min-w-0 flex-1">
+                    <p className="text-sm font-medium leading-none truncate">{contribution.contributor}</p>
+                    <p className="text-sm text-muted-foreground truncate">{contribution.campaign}</p>
                   </div>
-                  <div className="ml-auto font-medium">GHS {Number(contribution.amount).toLocaleString()}</div>
+                  <div className="ml-auto font-medium text-right">GHS {Number(contribution.amount).toLocaleString()}</div>
                 </div>
               ))
               ) : (

@@ -38,7 +38,6 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
-  useSidebar,
 } from "@/components/ui/sidebar"
 
 const navigationItems = [
@@ -167,7 +166,7 @@ function DashboardHeader() {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6">
-      <SidebarTrigger className="-ml-1" />
+      <SidebarTrigger className="mr-2" />
 
       <div className="flex flex-1 items-center gap-4">
         <div className="relative max-w-md flex-1">
@@ -225,52 +224,13 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-function SidebarOverlay() {
-  const { isMobile, openMobile, setOpenMobile } = useSidebar()
-
-  if (!isMobile || !openMobile) return null
-
-  return (
-    <div
-      className="fixed inset-0 z-40 bg-black/50 md:hidden"
-      onClick={() => setOpenMobile(false)}
-      aria-hidden="true"
-    />
-  )
-}
-
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
-  const { isMobile, openMobile, setOpenMobile, open, setOpen } = useSidebar()
-
-  const handleContentClick = () => {
-    if (isMobile && openMobile) {
-      // On mobile, close the overlay sidebar
-      setOpenMobile(false)
-    } else if (!isMobile && open) {
-      // On desktop, collapse the sidebar
-      setOpen(false)
-    }
-  }
-
   return (
     <>
       <AppSidebar />
-      <SidebarOverlay />
-      <SidebarInset 
-        onClick={handleContentClick}
-        className={`${
-          (!isMobile && open) || (isMobile && openMobile) 
-            ? 'cursor-pointer' 
-            : ''
-        }`}
-        title={
-          (!isMobile && open) || (isMobile && openMobile)
-            ? 'Click to close sidebar'
-            : undefined
-        }
-      >
+      <SidebarInset>
         <DashboardHeader />
-        <main className="flex-1 space-y-4 p-6">{children}</main>
+        <main className="flex-1 space-y-4 p-4 md:p-6 overflow-auto w-full">{children}</main>
       </SidebarInset>
     </>
   )
@@ -278,7 +238,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={true}>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </SidebarProvider>
   )
