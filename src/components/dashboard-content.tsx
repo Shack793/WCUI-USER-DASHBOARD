@@ -25,10 +25,26 @@ interface RecentContribution {
 }
 
 interface DashboardApiResponse {
+  user_id?: number
   totalCampaigns: number
   totalContributions: string
-  withdrawals: number
+  withdrawals: string
   expiredCampaigns: number
+  walletStats?: {
+    balance: string
+    total_withdrawn: string
+    withdrawal_count: number
+    currency: string
+    last_withdrawal_at: string | null
+    status: string
+  }
+  withdrawalHistory?: Array<{
+    id: number
+    amount: string
+    date: string
+    status: string
+    method: string
+  }>
   chartData: ChartDataPoint[]
   recentContributions: RecentContribution[]
 }
@@ -63,23 +79,81 @@ export function DashboardContent() {
 
       console.log('🔍 Current authenticated user:', user)
       console.log('🔍 Authentication status:', isAuthenticated)
+      console.log('🔍 Auth token:', localStorage.getItem('authToken') ? 'Present' : 'Missing')
 
       try {
         setLoading(true)
         console.log('🔍 Fetching user dashboard data...')
+        
+        // Debug the request being made
+        const token = localStorage.getItem('authToken')
+        console.log('🔍 Making request to:', 'https://crowdfundingapi.wgtesthub.com/api/v1/userdashboard')
+        console.log('🔍 With token:', token ? `${token.substring(0, 20)}...` : 'No token')
+        console.log('🔍 Full token for debugging:', token)
+        
+        // Test authentication directly
+        if (token) {
+          try {
+            const testResponse = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/user', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              }
+            })
+            console.log('🔍 Auth test response status:', testResponse.status)
+            if (testResponse.ok) {
+              const userData = await testResponse.json()
+              console.log('🔍 Auth test user data:', userData)
+            } else {
+              console.log('🔍 Auth test failed:', await testResponse.text())
+            }
+          } catch (authError) {
+            console.log('🔍 Auth test error:', authError)
+          }
+        }
+        
         const { data } = await dashboardAPI.getUserDashboard()
         console.log('🔍 Raw API response:', data)
         
         if (data) {
           console.log('🔍 Dashboard data structure:', {
+            user_id: data.user_id, // Add user ID logging
             totalCampaigns: data.totalCampaigns,
             totalContributions: data.totalContributions,
             withdrawals: data.withdrawals,
             expiredCampaigns: data.expiredCampaigns,
             hasChartData: !!data.chartData,
             hasRecentContributions: !!data.recentContributions,
+            chartDataLength: data.chartData?.length,
+            recentContributionsLength: data.recentContributions?.length,
             dataKeys: Object.keys(data)
           })
+          
+          // Critical check: If user_id is undefined, the backend authentication is not working
+          if (data.user_id === undefined || data.user_id === null) {
+            console.error('🚨 CRITICAL: Backend is not filtering by authenticated user!')
+            console.error('🚨 This means either:')
+            console.error('🚨 1. The route /api/v1/userdashboard is not protected with auth:sanctum middleware')
+            console.error('🚨 2. The authentication guard is not working properly')
+            console.error('🚨 3. The controller is not getting the authenticated user context')
+            toast({
+              title: "Authentication Error",
+              description: "Backend authentication is not working properly. Please contact support.",
+              variant: "destructive",
+            })
+            return
+          }
+          
+          // Check if the API returned user-specific data
+          if (data.user_id && user?.id && data.user_id.toString() !== user.id.toString()) {
+            console.warn('⚠️ API returned data for different user!', {
+              frontendUserId: user.id,
+              apiUserId: data.user_id
+            })
+          }
+          
           setDashboardData(data)
         } else {
           console.error("Failed to load dashboard data")
@@ -91,6 +165,13 @@ export function DashboardContent() {
         }
       } catch (error: any) {
         console.error("Failed to fetch dashboard data:", error)
+        console.error("Error details:", {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          url: error.config?.url,
+          headers: error.config?.headers
+        })
         toast({
           title: "Error",
           description: error.response?.data?.message || "Failed to load dashboard data",
@@ -109,8 +190,13 @@ export function DashboardContent() {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
         <p className="text-muted-foreground">
-          {loading ? "Loading dashboard data..." : "Welcome back! Here's what's happening with your campaigns."}
+          {loading ? "Loading dashboard data..." : `Welcome back, ${user?.name || 'User'}! Here's what's happening with your campaigns.`}
         </p>
+        {user && (
+          <p className="text-xs text-muted-foreground mt-2">
+            User ID: {user.id} | Email: {user.email}
+          </p>
+        )}
       </div>
 
       {/* Main Stats */}
@@ -141,7 +227,7 @@ export function DashboardContent() {
             <Wallet className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">GHS {dashboardData?.withdrawals || 0}</div>
+            <div className="text-2xl font-bold">GHS {dashboardData ? Number(dashboardData.withdrawals).toLocaleString() : '0'}</div>
             <p className="text-xs text-muted-foreground">Total withdrawals made</p>
           </CardContent>
         </Card>
