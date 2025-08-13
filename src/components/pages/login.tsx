@@ -64,23 +64,23 @@ export function LoginPage() {
           {/* Quote on top of the login box */}
           <div className="mb-6 text-center">
             <div className="bg-cyan-50 rounded-lg p-4 mb-6 border-l-4 border-[#37b7ff] shadow-sm">
-              <p className="text-[#37b7ff] text-sm italic">
+                <p className="text-[#37b7ff] text-sm italic">
                 "Making a difference together - Join thousands creating positive change worldwide."
-              </p>
+                </p>
             </div>
           </div>
           <div className="mb-6 flex items-center justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#37b7ff] to-sky-600 shadow-lg border-4 border-white">
               <img
                 src="/images/wgg.png"
-                alt="WG Crowdfunding Logo"
+                alt="MyEasyDonate Logo"
                 className="h-14 w-14 object-contain"
               />
             </div>
           </div>
 
           <h1 className="mb-2 text-center text-3xl font-bold tracking-tight bg-gradient-to-r from-[#37b7ff] to-sky-600 bg-clip-text text-transparent">Welcome back</h1>
-          <p className="mb-8 text-center text-gray-600">Sign in to your WG Crowdfunding account</p>
+            <p className="mb-8 text-center text-gray-600">Sign in to your MyEasyDonate account</p>
 
           {/* Social login buttons */}
          {/*iv className="mb-6 grid grid-cols-3 gap-3">

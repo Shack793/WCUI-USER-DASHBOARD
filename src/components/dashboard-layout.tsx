@@ -92,11 +92,11 @@ function AppSidebar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-[#37b7ff]">
             <img
               src="/images/wgg.png"
-              alt="WG Crowdfunding Logo"
+              alt="MyEasyDonate Logo"
               className="h-5 w-5 object-contain"
             />
           </div>
-          <span className="text-lg font-semibold">WG Dashboard </span>
+          <span className="text-lg font-semibold">MyEasyDonate </span>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -119,7 +119,7 @@ function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <div className="p-4 text-xs text-muted-foreground">WG Crowdfunding, 2025</div>
+        <div className="p-4 text-xs text-muted-foreground">MyEasyDonate, 2025</div>
       </SidebarFooter>
       <SidebarRail className="w-8 hover:w-12 transition-all duration-200 cursor-pointer" />
     </Sidebar>

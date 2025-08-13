@@ -30,6 +30,8 @@ interface DashboardApiResponse {
   totalContributions: string
   withdrawals: string
   expiredCampaigns: number
+  activeCampaigns: number
+  terminatedCampaigns: number
   walletStats?: {
     balance: string
     total_withdrawn: string
@@ -223,16 +225,6 @@ export function DashboardContent() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Withdrawals</CardTitle>
-            <Wallet className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">GHS {dashboardData ? Number(dashboardData.withdrawals).toLocaleString() : '0'}</div>
-            <p className="text-xs text-muted-foreground">Total withdrawals made</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Expired Campaigns</CardTitle>
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -241,6 +233,18 @@ export function DashboardContent() {
             <p className="text-xs text-muted-foreground">Campaigns that have ended</p>
           </CardContent>
         </Card>
+
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Terminated Campaigns</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData?.terminatedCampaigns || 0}</div>
+            <p className="text-xs text-muted-foreground">Campaigns that have been terminated</p>
+          </CardContent>
+        </Card>
+
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3 xl:grid-cols-5">
