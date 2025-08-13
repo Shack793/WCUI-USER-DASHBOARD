@@ -26,7 +26,7 @@ const getImageUrl = (url: string | null) => {
   if (url.startsWith('http')) {
     // Fix localhost URLs to use production API
     if (url.includes('localhost/storage/')) {
-      const fixedUrl = url.replace('http://localhost/', 'https://crowdfundingapi.wgtesthub.com/')
+      const fixedUrl = url.replace('http://localhost/', 'https://admin.myeasydonate.com/')
       console.log('Fixed localhost URL:', url, '→', fixedUrl)
       return fixedUrl
     }
@@ -34,7 +34,7 @@ const getImageUrl = (url: string | null) => {
     return url
   }
 
-  const fullUrl = `https://crowdfundingapi.wgtesthub.com${url}`
+  const fullUrl = `https://admin.myeasydonate.com${url}`
   console.log('URL is relative, returning full URL:', fullUrl)
   return fullUrl
 };

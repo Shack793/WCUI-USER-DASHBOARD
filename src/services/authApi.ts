@@ -32,13 +32,45 @@ interface AuthResponse {
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     try {
-      const response = await api.post<AuthResponse>('/api/v1/login', credentials)
+      console.log('🔐 Starting login process...')
+      console.log('🔐 Base URL:', import.meta.env.VITE_API_BASE_URL || 'https://admin.myeasydonate.com')
+      console.log('🔐 Credentials:', { email: credentials.email, password: '[HIDDEN]' })
+      console.log('🔐 Full URL will be:', `${import.meta.env.VITE_API_BASE_URL || 'https://admin.myeasydonate.com'}/api/v1/login`)
+      
+      const response = await api.post<AuthResponse>('/api/v1/login', credentials, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      
+      console.log('🔐 Login response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        data: response.data
+      })
+      
       if (response.data.token) {
+        console.log('🔐 Token received, storing in localStorage')
         localStorage.setItem('authToken', response.data.token)
+      } else {
+        console.warn('🔐 No token in response!')
       }
+      
       return response.data
     } catch (error: any) {
-      console.error('Login error:', error.response?.data || error.message)
+      console.error('🔐 Login error details:', {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL
+        }
+      })
       throw new Error(error.response?.data?.message || 'Failed to login')
     }
   },

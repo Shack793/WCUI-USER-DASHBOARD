@@ -17,10 +17,29 @@ export function LoginPage() {
     setError("")
     setIsLoading(true)
 
+    console.log('🔑 Login form submitted with:', { email, password: '[HIDDEN]' })
+
     try {
       await login(email, password)
+      console.log('🔑 Login successful!')
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to login. Please check your credentials.")
+      console.error('🔑 Login failed:', err)
+      console.error('🔑 Error details:', {
+        message: err.message,
+        response: err.response,
+        status: err.response?.status,
+        data: err.response?.data
+      })
+      
+      let errorMessage = "Failed to login. Please check your credentials."
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message
+      } else if (err.message) {
+        errorMessage = err.message
+      }
+      
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }

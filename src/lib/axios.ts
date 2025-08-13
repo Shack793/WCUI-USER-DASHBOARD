@@ -1,10 +1,17 @@
 import axios from 'axios';
 
+// Ensure base URL doesn't have double slashes
+const getBaseURL = () => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL || 'https://admin.myeasydonate.com'
+  return envUrl.endsWith('/') ? envUrl.slice(0, -1) : envUrl
+}
+
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://crowdfundingapi.wgtesthub.com',
+  baseURL: getBaseURL(),
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json'
+    'Accept': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   },
   withCredentials: false // Changed to false since we're using Bearer token auth
 });

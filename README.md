@@ -39,7 +39,7 @@ A modern React SPA dashboard for crowdfunding platform users built with Vite, Re
    \`\`\`
    Update the `.env` file with your API endpoint:
    \`\`\`
-   VITE_API_BASE_URL=https://crowdfundingapi.wgtesthub.com/api
+   VITE_API_BASE_URL=https://admin.myeasydonate.com/api
    \`\`\`
 
 4. **Run the development server:**

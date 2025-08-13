@@ -123,7 +123,7 @@ export function BoostCampaignPage() {
     if (url.startsWith("http")) {
       // Fix localhost URLs to use production API
       if (url.includes('localhost/storage/')) {
-        const fixedUrl = url.replace('http://localhost/', 'https://crowdfundingapi.wgtesthub.com/')
+        const fixedUrl = url.replace('http://localhost/', 'https://admin.myeasydonate.com/')
         console.log('Fixed localhost URL:', url, '→', fixedUrl)
         return fixedUrl
       }
@@ -131,7 +131,7 @@ export function BoostCampaignPage() {
       return url
     }
 
-    const fullUrl = `https://crowdfundingapi.wgtesthub.com${url}`
+    const fullUrl = `https://admin.myeasydonate.com${url}`
     console.log('URL is relative, returning full URL:', fullUrl)
     return fullUrl
   }
@@ -576,7 +576,7 @@ export function BoostCampaignPage() {
       }
 
       console.log('Calling debit-wallet endpoint directly with payload:', payload)
-      console.log('Endpoint: https://crowdfundingapi.wgtesthub.com/api/v1/payments/debit-wallet')
+      console.log('Endpoint: https://admin.myeasydonate.com/api/v1/payments/debit-wallet')
 
       // Show initial toast
       toast({
@@ -586,7 +586,7 @@ export function BoostCampaignPage() {
       })
 
       // Call the API directly with fetch
-      const response = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/payments/debit-wallet', {
+      const response = await fetch('https://admin.myeasydonate.com/api/v1/payments/debit-wallet', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -803,7 +803,7 @@ export function BoostCampaignPage() {
         try {
           // First try POST method
           console.log('Trying POST method for check-status...')
-          statusResponse = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/payments/check-status', {
+          statusResponse = await fetch('https://admin.myeasydonate.com/api/v1/payments/check-status', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -815,7 +815,7 @@ export function BoostCampaignPage() {
           if (statusResponse.status === 405) {
             console.log('POST method not allowed, trying GET method...')
             // Try GET method with query parameter
-            statusResponse = await fetch(`https://crowdfundingapi.wgtesthub.com/api/v1/payments/check-status?refNo=${transactionId}`, {
+            statusResponse = await fetch(`https://admin.myeasydonate.com/api/v1/payments/check-status?refNo=${transactionId}`, {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',
@@ -826,7 +826,7 @@ export function BoostCampaignPage() {
           if (statusResponse.status === 405 || statusResponse.status === 404) {
             console.log('Standard endpoints failed, trying alternative endpoint...')
             // Try alternative endpoint structure
-            statusResponse = await fetch(`https://crowdfundingapi.wgtesthub.com/api/v1/payments/status/${transactionId}`, {
+            statusResponse = await fetch(`https://admin.myeasydonate.com/api/v1/payments/status/${transactionId}`, {
               method: 'GET',
               headers: {
                 'Accept': 'application/json',
@@ -1088,7 +1088,7 @@ export function BoostCampaignPage() {
     console.log('Testing debit-wallet endpoint with payload:', testPayload)
 
     try {
-      const debitResponse = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/payments/debit-wallet', {
+      const debitResponse = await fetch('https://admin.myeasydonate.com/api/v1/payments/debit-wallet', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1108,7 +1108,7 @@ export function BoostCampaignPage() {
         console.log('Testing check-status endpoint with transactionId:', debitData.transactionId)
 
         try {
-          const statusResponse = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/payments/check-status', {
+          const statusResponse = await fetch('https://admin.myeasydonate.com/api/v1/payments/check-status', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -1141,7 +1141,7 @@ export function BoostCampaignPage() {
       }
 
       try {
-        const boostResponse = await fetch(`https://crowdfundingapi.wgtesthub.com/api/v1/boost-campaign/${campaign.id}`, {
+        const boostResponse = await fetch(`https://admin.myeasydonate.com/api/v1/boost-campaign/${campaign.id}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

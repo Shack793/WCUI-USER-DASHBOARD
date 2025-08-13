@@ -87,14 +87,14 @@ export function DashboardContent() {
         
         // Debug the request being made
         const token = localStorage.getItem('authToken')
-        console.log('🔍 Making request to:', 'https://crowdfundingapi.wgtesthub.com/api/v1/userdashboard')
+        console.log('🔍 Making request to:', 'https://admin.myeasydonate.com/api/v1/userdashboard')
         console.log('🔍 With token:', token ? `${token.substring(0, 20)}...` : 'No token')
         console.log('🔍 Full token for debugging:', token)
         
         // Test authentication directly
         if (token) {
           try {
-            const testResponse = await fetch('https://crowdfundingapi.wgtesthub.com/api/v1/user', {
+            const testResponse = await fetch('https://admin.myeasydonate.com/api/v1/user', {
               method: 'GET',
               headers: {
                 'Authorization': `Bearer ${token}`,
