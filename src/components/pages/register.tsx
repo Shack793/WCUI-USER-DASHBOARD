@@ -91,8 +91,8 @@ export function RegisterPage() {
           <div className="mb-6 flex items-center justify-center">
             <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#37b7ff] to-sky-600 shadow-lg border-4 border-white">
               <img
-                src="/images/wgg.png"
-                alt="WaltergateFund Logo"
+                src="/images/MyEasyDonate 3.png"
+                alt="MyEasyDonate Logo"
                 className="h-14 w-14 object-contain"
               />
             </div>

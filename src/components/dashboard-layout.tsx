@@ -91,7 +91,7 @@ function AppSidebar() {
         <div className="flex items-center gap-2 px-4 py-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-[#37b7ff]">
             <img
-              src="/images/wgg.png"
+              src="/images/MyEasyDonate 3.png"
               alt="MyEasyDonate Logo"
               className="h-5 w-5 object-contain"
             />

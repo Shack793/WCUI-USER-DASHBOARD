@@ -70,11 +70,15 @@ export function LoginPage() {
             </div>
           </div>
           <div className="mb-6 flex items-center justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#37b7ff] to-sky-600 shadow-lg border-4 border-white">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg border-4 border-gray-200">
               <img
-                src="/images/wgg.png"
+                src="/images/MyEasyDonate 3.png"
                 alt="MyEasyDonate Logo"
                 className="h-14 w-14 object-contain"
+                onError={(e) => {
+                  console.error("Logo image failed to load:", e);
+                  (e.target as HTMLImageElement).src = "/images/wgg.png";
+                }}
               />
             </div>
           </div>
