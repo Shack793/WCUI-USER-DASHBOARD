@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Upload, X, ArrowLeft } from "lucide-react"
+import { Upload, X, ArrowLeft, Trash2 } from "lucide-react"
 import { useToast } from '../../hooks/use-toast'
 import { dashboardAPI } from "../../lib/api"
 
@@ -77,6 +77,8 @@ export function UpdateCampaignPage() {
   const { toast } = useToast()
   
   const [loading, setLoading] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [campaignLoading, setCampaignLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
@@ -305,6 +307,55 @@ export function UpdateCampaignPage() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Handle campaign deletion
+  const handleDelete = async () => {
+    if (!slug) return
+
+    setDeleteLoading(true)
+    setError(null)
+
+    try {
+      console.log('=== DELETING CAMPAIGN ===')
+      console.log('Campaign slug:', slug)
+
+      // Call API to delete campaign
+      await dashboardAPI.deleteCampaign(slug)
+
+      // Success - redirect to campaigns page with success message
+      console.log('Campaign deleted successfully')
+      
+      toast({
+        title: "Campaign Deleted",
+        description: "Your campaign has been deleted successfully!",
+        variant: "default",
+      })
+      
+      navigate('/campaigns')
+
+    } catch (error: any) {
+      console.error('Failed to delete campaign:', error)
+      
+      let errorMessage = 'Failed to delete campaign. Please try again.'
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response?.data?.errors) {
+        const errors = error.response.data.errors
+        errorMessage = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`).join('\n')
+      }
+      
+      setError(errorMessage)
+      toast({
+        title: "Delete Failed",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteLoading(false)
+      setShowDeleteConfirm(false)
     }
   }
 
@@ -545,7 +596,7 @@ export function UpdateCampaignPage() {
                 <Button
                   type="submit"
                   className="flex-1 bg-[#37b7ff] hover:bg-[#2a8fc7] text-white"
-                  disabled={loading}
+                  disabled={loading || deleteLoading}
                 >
                   {loading ? 'Updating Campaign...' : 'Update Campaign'}
                 </Button>
@@ -553,14 +604,78 @@ export function UpdateCampaignPage() {
                   type="button"
                   variant="outline"
                   onClick={() => navigate('/campaigns')}
-                  disabled={loading}
+                  disabled={loading || deleteLoading}
                 >
                   Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={loading || deleteLoading}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
                 </Button>
               </div>
             </form>
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-xl">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Delete Campaign</h3>
+                  <p className="text-sm text-gray-500">This action cannot be undone</p>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <p className="text-gray-700">
+                  Are you sure you want to delete <strong>"{campaign?.title}"</strong>? 
+                  This will permanently remove the campaign and all associated data.
+                </p>
+              </div>
+              
+              <div className="flex gap-3 justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={deleteLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDelete}
+                  disabled={deleteLoading}
+                  className="flex items-center gap-2"
+                >
+                  {deleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Delete Campaign
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

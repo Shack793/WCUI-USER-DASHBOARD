@@ -48,7 +48,7 @@ export const dashboardAPI = {
     } : {}
     return api.post(`/api/v1/campaigns/${slug}`, data, config)
   },
-  deleteCampaign: (id: string) => api.delete(`/campaigns/${id}`),
+  deleteCampaign: (id: string) => api.delete(`/api/v1/campaigns/${id}`),
   boostCampaign: (campaignId: number, data: { plan_id: number; payment_method_id: number }) =>
     api.post(`/api/v1/boost-campaign/${campaignId}`, data),
   getBoostPlans: () => api.get("/api/v1/boost-plans"),
