@@ -89,11 +89,15 @@ export function RegisterPage() {
             </div>
           </div>
           <div className="mb-6 flex items-center justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#37b7ff] to-sky-600 shadow-lg border-4 border-white">
+            <div className="flex h-32 w-32 items-center justify-center rounded-full bg-white shadow-lg border-4 border-gray-200">
               <img
-                src="/images/MyEasyDonate 3.png"
+                src="/images/myeasydonate-voted-logo-cropped.png"
                 alt="MyEasyDonate Logo"
-                className="h-14 w-14 object-contain"
+                className="h-24 w-24 object-contain"
+                onError={(e) => {
+                  console.error("Logo image failed to load:", e);
+                  (e.target as HTMLImageElement).src = "/images/wgg.png";
+                }}
               />
             </div>
           </div>

@@ -1,4 +1,4 @@
-import type React from "react"
+import React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import {
   Bell,
@@ -37,6 +37,7 @@ import {
   SidebarProvider,
   SidebarRail,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 const navigationItems = [
@@ -84,19 +85,24 @@ const navigationItems = [
 
 function AppSidebar() {
   const location = useLocation()
+  const { state } = useSidebar()
 
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="flex items-center gap-2 px-4 py-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-[#37b7ff]">
+        <div className="flex items-center justify-center px-4 py-4">
+            <div className={`flex items-center justify-center rounded-lg bg-white border border-[#37b7ff] shadow-md ${state === "expanded" ? "h-16 w-16" : "h-10 w-10"} transition-all duration-200`}>
             <img
-              src="/images/MyEasyDonate 3.png"
+              src="/images/myeasydonate-voted-logo-cropped.png"
               alt="MyEasyDonate Logo"
-              className="h-5 w-5 object-contain"
+              className="h-80 w-80 object-contain font-black transform scale-110"
+              onError={(e) => {
+              console.error("Logo image failed to load:", e);
+              (e.target as HTMLImageElement).src = "/images/wgg.png";
+              }}
             />
-          </div>
-          <span className="text-lg font-semibold">MyEasyDonate </span>
+            </div>
+          {/* <span className="text-lg font-semibold">MyEasyDonate </span> */}
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -106,7 +112,7 @@ function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url} tooltip={item.title}>
                     <Link to={item.url} className="flex items-center gap-2">
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
@@ -121,7 +127,7 @@ function AppSidebar() {
       <SidebarFooter>
         <div className="p-4 text-xs text-muted-foreground">MyEasyDonate, 2025</div>
       </SidebarFooter>
-      <SidebarRail className="w-8 hover:w-12 transition-all duration-200 cursor-pointer" />
+      <SidebarRail className="w-6 hover:w-8 transition-all duration-200 cursor-pointer" />
     </Sidebar>
   )
 }
@@ -159,7 +165,7 @@ function DashboardHeader() {
 
   return (
     <header className="flex h-16 shrink-0 items-center gap-4 border-b bg-background px-6">
-      <SidebarTrigger className="mr-2" />
+      <SidebarTrigger className="mr-2 border border-gray-200 bg-white hover:bg-gray-50" />
 
       <div className="flex flex-1 items-center gap-4">
         <div className="relative max-w-md flex-1">
@@ -177,8 +183,8 @@ function DashboardHeader() {
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled={loading}>
-              <Avatar className="h-8 w-8">
+            <Button variant="ghost" className="relative h-12 w-12 rounded-full" disabled={loading}>
+              <Avatar className="h-12 w-12">
                 <AvatarImage src="/placeholder-user.jpg" alt={user?.name || "User"} />
                 <AvatarFallback>{user ? getUserInitials(user.name) : "U"}</AvatarFallback>
               </Avatar>
@@ -187,7 +193,6 @@ function DashboardHeader() {
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium leading-none">{user?.name || "User"}</p>
                 <p className="text-xs leading-none text-muted-foreground">{user?.email || "user@example.com"}</p>
               </div>
             </DropdownMenuLabel>
@@ -218,21 +223,36 @@ interface DashboardLayoutProps {
   children: React.ReactNode
 }
 
-function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {  
   return (
-    <>
+    <div className="flex w-full min-h-screen">
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         <DashboardHeader />
-        <main className="flex-1 space-y-4 p-4 md:p-6 overflow-auto w-full">{children}</main>
+        <main className="flex-1 space-y-4 p-4 md:p-6 overflow-auto w-full transition-all duration-200">
+          {children}
+        </main>
       </SidebarInset>
-    </>
+    </div>
   )
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
+  // Store sidebar state in local storage
+  const [sidebarOpen, setSidebarOpen] = React.useState(() => {
+    // Get stored value, default to true if not found
+    const stored = localStorage.getItem('sidebarOpen');
+    return stored === null ? true : stored === 'true';
+  });
+  
+  // Update local storage when sidebar state changes
+  const handleSidebarChange = (open: boolean) => {
+    setSidebarOpen(open);
+    localStorage.setItem('sidebarOpen', open.toString());
+  };
+
   return (
-    <SidebarProvider defaultOpen={true}>
+    <SidebarProvider defaultOpen={sidebarOpen} open={sidebarOpen} onOpenChange={handleSidebarChange}>
       <DashboardLayoutContent>{children}</DashboardLayoutContent>
     </SidebarProvider>
   )
