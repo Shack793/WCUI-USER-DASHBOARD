@@ -147,6 +147,12 @@ export const dashboardAPI = {
     api.put("/api/v1/user/update", data),
   updateUserPassword: (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => 
     api.put("/api/v1/user/update-password", data),
+
+  // Email verification for withdrawals
+  sendWithdrawalVerificationCode: (data: { email: string }) =>
+    api.post("/api/v1/withdrawal/send-verification-code", data),
+  verifyWithdrawalCode: (data: { email: string; code: string }) =>
+    api.post("/api/v1/withdrawal/verify-code", data),
 }
 
 // Campaign API endpoints

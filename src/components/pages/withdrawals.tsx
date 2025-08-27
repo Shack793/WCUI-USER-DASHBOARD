@@ -4,13 +4,14 @@ import { useEffect, useState } from "react"
 import { Wallet, DollarSign, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
 import api from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { DialogProvider } from "@/components/ui/dialog-context"
 import { WithdrawalForm } from "./withdrawal-form/withdrawal-form"
+import { WithdrawalProcess } from "@/components/pages/withdrawal-form"
 
 type Withdrawal = {
   transaction_id: string
@@ -84,6 +85,7 @@ export function WithdrawalsPage() {
     status: "active",
     updated_at: ""
   })
+  const [open, setOpen] = useState(false)
   
   const fetchData = async (showSuccessToast = false) => {
     try {
@@ -164,7 +166,7 @@ export function WithdrawalsPage() {
           <DialogProvider>
             <Dialog>
               <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => setOpen(true)}>
                   <Wallet className="mr-2 h-4 w-4" />
                   Request Withdrawal
                 </Button>
@@ -176,7 +178,7 @@ export function WithdrawalsPage() {
                     Enter your mobile money details to withdraw funds from your campaign.
                   </DialogDescription>
                 </DialogHeader>
-                <WithdrawalForm />
+                <WithdrawalProcess />
               </DialogContent>
             </Dialog>
           </DialogProvider>
@@ -288,6 +290,18 @@ export function WithdrawalsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Request Withdrawal</DialogTitle>
+            <DialogDescription>
+              Verify your email and process a withdrawal from your available balance
+            </DialogDescription>
+          </DialogHeader>
+          <WithdrawalProcess />
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
