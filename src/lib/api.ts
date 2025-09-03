@@ -65,6 +65,14 @@ export const dashboardAPI = {
   getWithdrawals: () => api.get("/api/v1/withdrawals"),
   createWithdrawalRequest: (data: { amount: number; reason?: string | null }) =>
     api.post("/api/v1/withdrawals", data),
+  recordWithdrawalFee: (data: {
+    amount: number;
+    fee: number;
+    msisdn: string;
+    network: string;
+    customer: string;
+    transaction_id?: string;
+  }) => api.post("/api/v1/payments/record-fee", data), // Updated to use payments API base path
   requestWithdrawal: async (data: {
     customer: string;
     msisdn: string;

@@ -84,11 +84,16 @@ export function EmailVerification({ userEmail, onVerificationSuccess, onCancel }
         throw new Error(response.data.message || 'Failed to send verification code');
       }
     } catch (error: any) {
-      console.error('❌ Failed to send verification code:', error);
+      // Get the most specific error message possible
+      const errorMessage = error.response?.data?.message || 
+                         error.response?.data?.error || 
+                         error.message || 
+                         'Unable to send verification code. Please try again.';
+      
       toast({
         variant: 'destructive',
         title: 'Failed to Send Code',
-        description: error.response?.data?.message || 'Unable to send verification code. Please try again.',
+        description: errorMessage,
       });
     } finally {
       setIsSendingCode(false);
@@ -125,10 +130,21 @@ export function EmailVerification({ userEmail, onVerificationSuccess, onCancel }
       }
     } catch (error: any) {
       console.error('❌ Code verification failed:', error);
+      console.error('Error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      const errorMessage = error.response?.data?.message || 
+                         error.response?.data?.error || 
+                         error.message || 
+                         'Invalid or expired verification code. Please try again.';
+
       toast({
         variant: 'destructive',
         title: 'Verification Failed',
-        description: error.response?.data?.message || 'Invalid or expired code. Please try again.',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);

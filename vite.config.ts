@@ -11,6 +11,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: true, // This will expose the server on all network interfaces
+    port: 8000, // Custom port - change this to your preferred port
     historyApiFallback: true,
   },
   base: "/",

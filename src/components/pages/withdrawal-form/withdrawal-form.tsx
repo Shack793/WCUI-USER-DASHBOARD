@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input-new';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletBalance, useNetworkDetection } from './hooks';
-import { useDialog } from '@/components/ui/dialog-context';
+import { calculateWithdrawalFee } from '@/lib/withdrawal-fees';
 
 const formSchema = z.object({
   customer: z
@@ -35,10 +35,9 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export function WithdrawalForm() {
+export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { setIsOpen } = useDialog();
   const { balance, currency, loading: balanceLoading, refetchBalance } = useWalletBalance();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [withdrawalSuccess, setWithdrawalSuccess] = useState(false);
@@ -48,6 +47,26 @@ export function WithdrawalForm() {
     newBalance: string;
     transactionId?: string;
   } | null>(null);
+
+  const [withdrawalDetails, setWithdrawalDetails] = useState<{
+    amount: number;
+    fee: number;
+    netAmount: number;
+    feePercentage: number;
+    breakdown: {
+      baseFee: number;
+      serviceFee: number;
+    };
+  }>({
+    amount: 0,
+    fee: 0,
+    netAmount: 0,
+    feePercentage: 0,
+    breakdown: {
+      baseFee: 0,
+      serviceFee: 5
+    }
+  });
 
   const {
     register,
@@ -67,7 +86,34 @@ export function WithdrawalForm() {
   });
 
   const msisdn = watch('msisdn');
+  const amount = watch('amount');
   const network = useNetworkDetection(msisdn);
+
+  // Calculate fee when amount changes
+  useEffect(() => {
+    const amountNum = Number(amount);
+    if (amountNum > 0) {
+      const feeCalculation = calculateWithdrawalFee(amountNum);
+      setWithdrawalDetails({
+        amount: amountNum,
+        fee: feeCalculation.fee,
+        netAmount: feeCalculation.netAmount,
+        feePercentage: feeCalculation.feePercentage,
+        breakdown: feeCalculation.breakdown
+      });
+    } else {
+      setWithdrawalDetails({
+        amount: 0,
+        fee: 0,
+        netAmount: 0,
+        feePercentage: 0,
+        breakdown: {
+          baseFee: 0,
+          serviceFee: 5
+        }
+      });
+    }
+  }, [amount]);
 
   // Name enquiry effect
   useEffect(() => {
@@ -145,15 +191,37 @@ export function WithdrawalForm() {
       // Process withdrawal request
       console.log('🚀 Processing withdrawal...');
       try {
-        const response = await dashboardAPI.requestWithdrawal({
+        // Process the withdrawal using credit-wallet endpoint
+        const response = await api.post('/api/v1/payments/credit-wallet', {
           customer: data.customer,
           msisdn: data.msisdn,
-          amount: data.amount.toString(),
+          amount: withdrawalDetails.netAmount.toString(), // Use net amount after fee
           network: network,
           narration: data.narration || 'Credit MTN Customer'
         });
 
         console.log('✅ Withdrawal successful:', response.data);
+        
+        // Record the fee after successful withdrawal
+        try {
+          await dashboardAPI.recordWithdrawalFee({
+            amount: withdrawalDetails.netAmount,
+            fee: withdrawalDetails.fee,
+            msisdn: data.msisdn,
+            network: network,
+            customer: data.customer,
+            transaction_id: response.data.data.transaction_id // Include transaction ID if available
+          });
+          console.log('✅ Fee recorded successfully');
+        } catch (feeError: any) {
+          console.error('⚠️ Failed to record fee:', feeError);
+          console.error('Fee recording error details:', {
+            status: feeError.response?.status,
+            data: feeError.response?.data,
+            message: feeError.message
+          });
+          // Don't block the process if fee recording fails
+        }
         
         // Set success state with details
         setWithdrawalSuccess(true);
@@ -176,7 +244,7 @@ export function WithdrawalForm() {
         
         // Close dialog after a short delay to show success message
         setTimeout(() => {
-          setIsOpen(false);
+          onClose?.();
           // Navigate to withdrawals dashboard to see updated data
           navigate('/withdrawals');
         }, 2000);
@@ -326,6 +394,31 @@ export function WithdrawalForm() {
             <p className="text-sm text-red-500">{errors.amount.message}</p>
           )}
         </div>
+
+        {withdrawalDetails.amount > 0 && (
+          <div className="rounded-lg border p-4 space-y-2 bg-gray-50">
+            <h4 className="font-medium text-sm text-gray-700">Transaction Summary</h4>
+            <div className="text-sm space-y-1">
+              <div className="flex justify-between">
+                <span>Withdrawal Amount:</span>
+                <span>{currency} {withdrawalDetails.amount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>
+                  Processing fee ({withdrawalDetails.breakdown.baseFee}% + {withdrawalDetails.breakdown.serviceFee}% service) - <span className="font-bold">{withdrawalDetails.feePercentage}%</span>
+                </span>
+                <span>{currency} {withdrawalDetails.fee.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between font-medium pt-1 border-t">
+                <span>You will receive:</span>
+                <span>{currency} {withdrawalDetails.netAmount.toFixed(2)}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-2">
+                Fee structure: &lt;2000 (7.5%) | 2000-5000 (7%) | &gt;5000 (6.8%)
+              </div>
+            </div>
+          </div>
+        )}
 
         <Button
           type="submit"

@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { EmailVerification } from './email-verification';
 import { WithdrawalForm } from './withdrawal-form';
 
-export function WithdrawalProcess() {
+export function WithdrawalProcess({ onClose }: { onClose?: () => void }) {
   const { user } = useAuth();
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -39,5 +39,5 @@ export function WithdrawalProcess() {
     );
   }
 
-  return <WithdrawalForm />;
+  return <WithdrawalForm onClose={onClose} />;
 }

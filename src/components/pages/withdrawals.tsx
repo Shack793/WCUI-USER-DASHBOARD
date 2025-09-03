@@ -1,17 +1,16 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Wallet, DollarSign, Clock, CheckCircle, XCircle, RefreshCw } from "lucide-react"
+import { Wallet, Clock, CheckCircle, XCircle, RefreshCw, Info } from "lucide-react"
 import api from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { DialogProvider } from "@/components/ui/dialog-context"
-import { WithdrawalForm } from "./withdrawal-form/withdrawal-form"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { WithdrawalProcess } from "@/components/pages/withdrawal-form"
+import { getAllFeeRanges } from "@/lib/withdrawal-fees"
 
 type Withdrawal = {
   transaction_id: string
@@ -163,25 +162,10 @@ export function WithdrawalsPage() {
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <DialogProvider>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button onClick={() => setOpen(true)}>
-                  <Wallet className="mr-2 h-4 w-4" />
-                  Request Withdrawal
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Request Withdrawal</DialogTitle>
-                  <DialogDescription>
-                    Enter your mobile money details to withdraw funds from your campaign.
-                  </DialogDescription>
-                </DialogHeader>
-                <WithdrawalProcess />
-              </DialogContent>
-            </Dialog>
-          </DialogProvider>
+          <Button onClick={() => setOpen(true)}>
+            <Wallet className="mr-2 h-4 w-4" />
+            Request Withdrawal
+          </Button>
         </div>
       </div>
 
@@ -227,6 +211,39 @@ export function WithdrawalsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Fee Information Card */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Info className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg">Withdrawal Fee Structure</CardTitle>
+          </div>
+          <CardDescription>
+            Our dynamic fee structure ensures competitive rates based on withdrawal amount
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-3">
+            {getAllFeeRanges().map((feeRange, index) => (
+              <div key={index} className="rounded-lg border p-3 bg-gray-50">
+                <div className="text-sm font-medium text-gray-700">
+                  GHS {feeRange.range}
+                </div>
+                <div className="text-lg font-bold text-blue-600">
+                  {feeRange.rate}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {feeRange.description}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-3 text-xs text-gray-500">
+            💡 Lower fees for higher withdrawal amounts. All fees include a 5% service charge.
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -299,7 +316,7 @@ export function WithdrawalsPage() {
               Verify your email and process a withdrawal from your available balance
             </DialogDescription>
           </DialogHeader>
-          <WithdrawalProcess />
+          <WithdrawalProcess onClose={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>
