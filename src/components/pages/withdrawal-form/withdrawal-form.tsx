@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input-new';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useWalletBalance, useNetworkDetection } from './hooks';
-import { calculateWithdrawalFee } from '@/lib/withdrawal-fees';
 
 const formSchema = z.object({
   customer: z
@@ -52,20 +51,10 @@ export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
     amount: number;
     fee: number;
     netAmount: number;
-    feePercentage: number;
-    breakdown: {
-      baseFee: number;
-      serviceFee: number;
-    };
   }>({
     amount: 0,
     fee: 0,
-    netAmount: 0,
-    feePercentage: 0,
-    breakdown: {
-      baseFee: 0,
-      serviceFee: 5
-    }
+    netAmount: 0
   });
 
   const {
@@ -93,24 +82,18 @@ export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
   useEffect(() => {
     const amountNum = Number(amount);
     if (amountNum > 0) {
-      const feeCalculation = calculateWithdrawalFee(amountNum);
+      const fee = amountNum * 0.025; // 2.5% fee
+      const netAmount = amountNum - fee;
       setWithdrawalDetails({
         amount: amountNum,
-        fee: feeCalculation.fee,
-        netAmount: feeCalculation.netAmount,
-        feePercentage: feeCalculation.feePercentage,
-        breakdown: feeCalculation.breakdown
+        fee,
+        netAmount
       });
     } else {
       setWithdrawalDetails({
         amount: 0,
         fee: 0,
-        netAmount: 0,
-        feePercentage: 0,
-        breakdown: {
-          baseFee: 0,
-          serviceFee: 5
-        }
+        netAmount: 0
       });
     }
   }, [amount]);
@@ -190,17 +173,88 @@ export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
       
       // Process withdrawal request
       console.log('🚀 Processing withdrawal...');
+      
+      // Prepare credit-wallet payload with detailed logging
+      const creditWalletPayload = {
+        customer: data.customer,
+        msisdn: data.msisdn,
+        amount: withdrawalDetails.netAmount.toString(), // Use net amount after fee
+        network: network,
+        narration: data.narration || 'Credit MTN Customer'
+      };
+      
+      console.log('💳 Credit-wallet payload being sent:');
+      console.log('💳 Full payload:', JSON.stringify(creditWalletPayload, null, 2));
+      console.log('💳 Payload breakdown:', {
+        customer: creditWalletPayload.customer,
+        customer_length: creditWalletPayload.customer?.length,
+        msisdn: creditWalletPayload.msisdn,
+        msisdn_length: creditWalletPayload.msisdn?.length,
+        amount: creditWalletPayload.amount,
+        amount_type: typeof creditWalletPayload.amount,
+        network: creditWalletPayload.network,
+        narration: creditWalletPayload.narration
+      });
+      console.log('💳 Withdrawal details context:', {
+        originalAmount: data.amount,
+        originalAmountType: typeof data.amount,
+        calculatedFee: withdrawalDetails.fee,
+        calculatedNetAmount: withdrawalDetails.netAmount,
+        netAmountString: withdrawalDetails.netAmount.toString()
+      });
+      
       try {
         // Process the withdrawal using credit-wallet endpoint
-        const response = await api.post('/api/v1/payments/credit-wallet', {
-          customer: data.customer,
-          msisdn: data.msisdn,
-          amount: withdrawalDetails.netAmount.toString(), // Use net amount after fee
-          network: network,
-          narration: data.narration || 'Credit MTN Customer'
-        });
+        const response = await api.post('/api/v1/payments/credit-wallet', creditWalletPayload);
 
         console.log('✅ Withdrawal successful:', response.data);
+        
+        // **NEW: Update wallet balance in database after successful credit-wallet**
+        try {
+          const updatePayload = {
+            transaction_id: response.data.data.transaction_id || `WD-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            amount: data.amount, // Original withdrawal amount
+            status: 'completed'
+          };
+          
+          console.log('💾 Calling /api/v1/wallet/update-after-withdrawal endpoint...');
+          console.log('💾 Update payload being sent:', JSON.stringify(updatePayload, null, 2));
+          console.log('💾 Payload breakdown:', {
+            transaction_id: updatePayload.transaction_id,
+            amount: updatePayload.amount,
+            amount_type: typeof updatePayload.amount,
+            status: updatePayload.status
+          });
+          
+          const updateResponse = await api.post('/api/v1/wallet/update-after-withdrawal', updatePayload);
+          
+          console.log('✅ Database balance update successful!');
+          console.log('✅ Update response status:', updateResponse.status);
+          console.log('✅ Update response data:', JSON.stringify(updateResponse.data, null, 2));
+          
+        } catch (updateError: any) {
+          console.error('❌ CRITICAL: Failed to update database balance after successful withdrawal');
+          console.error('❌ Update error details:', {
+            status: updateError.response?.status,
+            statusText: updateError.response?.statusText,
+            data: updateError.response?.data,
+            message: updateError.message,
+            config: {
+              url: updateError.config?.url,
+              method: updateError.config?.method,
+              data: updateError.config?.data
+            }
+          });
+          console.error('❌ Full update error object:', updateError);
+          
+          // Show warning to user about potential balance sync issue
+          toast({
+            variant: 'destructive',
+            title: '⚠️ Balance Sync Warning',
+            description: 'Withdrawal was successful but balance may not be updated immediately. Please refresh the page or contact support if balance doesn\'t update.',
+            duration: 8000,
+          });
+        }
         
         // Record the fee after successful withdrawal
         try {
@@ -252,26 +306,37 @@ export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
       } catch (error: any) {
         console.error('❌ Withdrawal failed:', error);
         
+        // DETAILED ERROR ANALYSIS FOR CREDIT-WALLET ENDPOINT
+        console.error('🔍 COMPLETE ERROR BREAKDOWN:');
+        console.error('🔍 Error status:', error.response?.status);
+        console.error('🔍 Error status text:', error.response?.statusText);
+        console.error('🔍 Complete server response:', JSON.stringify(error.response?.data, null, 2));
+        console.error('🔍 Request headers:', error.config?.headers);
+        console.error('🔍 Request URL:', error.config?.url);
+        console.error('🔍 Request method:', error.config?.method);
+        console.error('🔍 Request payload sent:', JSON.stringify(error.config?.data, null, 2));
+        console.error('🔍 Axios error message:', error.message);
+        console.error('🔍 Axios error code:', error.code);
+        
         // Enhanced error handling to show specific server errors
         let errorMessage = 'Failed to process withdrawal';
         
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
+          console.error('📝 Server message:', error.response.data.message);
         } else if (error.response?.data?.error) {
           errorMessage = error.response.data.error;
+          console.error('📝 Server error:', error.response.data.error);
         } else if (error.response?.data?.errors) {
           // Handle validation errors
           const errors = error.response.data.errors;
+          console.error('📝 Validation errors:', errors);
           errorMessage = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`).join('\n');
         } else if (error.message) {
           errorMessage = error.message;
         }
         
-        console.log('🔍 Detailed error info:', {
-          status: error.response?.status,
-          data: error.response?.data,
-          message: error.message
-        });
+        console.log('🔍 Final error message to show user:', errorMessage);
         
         toast({
           variant: 'destructive',
@@ -405,16 +470,13 @@ export function WithdrawalForm({ onClose }: { onClose?: () => void }) {
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>
-                  Processing fee ({withdrawalDetails.breakdown.baseFee}% + {withdrawalDetails.breakdown.serviceFee}% service) - <span className="font-bold">{withdrawalDetails.feePercentage}%</span>
+                  Current service fee (Min: 1.8%) - <span className="font-bold">2.5%</span>
                 </span>
                 <span>{currency} {withdrawalDetails.fee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-medium pt-1 border-t">
                 <span>You will receive:</span>
                 <span>{currency} {withdrawalDetails.netAmount.toFixed(2)}</span>
-              </div>
-              <div className="text-xs text-gray-500 mt-2">
-                Fee structure: &lt;2000 (7.5%) | 2000-5000 (7%) | &gt;5000 (6.8%)
               </div>
             </div>
           </div>
